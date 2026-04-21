@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STUDIO | 摄影作品集</title>
+  <meta name="description" content="独立摄影师，专注于人像、风光与街头摄影。用镜头捕捉生活的温度。" />
+  
+  <!-- PWA -->
+  <meta name="theme-color" content="#1a1a1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="STUDIO" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.svg" />
+  
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #faf9f7; --bg-alt: #f0eeeb; --surface: #e8e6e3;
+      --dark: #1a1a1a; --darker: #0a0a0a;
+      --text: #2c2c2c; --muted: #7a7a75;
+      --accent: #9a9a90; --accent-warm: #c4a882;
+      --border: #ddd9d4; --white: #ffffff;
+      --gap: 20px; --gap-lg: 32px; --section: 100px;
+      --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    html { scroll-behavior: smooth; font-size: 16px; -webkit-font-smoothing: antialiased; }
+    body { background: var(--bg); color: var(--text); font-family: 'Helvetica Neue', -apple-system, sans-serif; line-height: 1.6; overflow-x: hidden; }
+    img { display: block; max-width: 100%; height: auto; }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-alt); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+    ::selection { background: var(--accent); color: var(--white); }
+
+    /* NAV */
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 0 48px; height: 72px; display: flex; align-items: center; justify-content: space-between; transition: all .4s var(--ease); }
+    .nav.scrolled { background: rgba(250,249,247,.95); backdrop-filter: blur(20px); box-shadow: 0 1px 0 var(--border); height: 64px; }
+    .nav-logo { font-size: 13px; font-weight: 500; letter-spacing: .35em; color: var(--dark); transition: opacity .3s; }
+    .nav-logo:hover { opacity: .7; }
+    .nav-links { display: flex; gap: 48px; list-style: none; }
+    .nav-links a { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); position: relative; padding: 8px 0; transition: color .3s; }
+    .nav-links a::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 1px; background: var(--dark); transition: width .4s var(--ease); }
+    .nav-links a:hover { color: var(--dark); }
+    .nav-links a:hover::after { width: 100%; }
+    .nav-links a.active { color: var(--dark); }
+    .nav-links a.active::after { width: 100%; }
+    .nav-cta { display: flex; align-items: center; gap: 16px; }
+    .nav-upload { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; padding: 10px 20px; background: transparent; border: 1px solid var(--border); color: var(--muted); transition: all .3s var(--ease); }
+    .nav-upload:hover { border-color: var(--dark); color: var(--dark); }
+    .nav-contact { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; padding: 10px 24px; background: var(--dark); border: 1px solid var(--dark); color: var(--white); transition: all .3s var(--ease); }
+    .nav-contact:hover { background: transparent; color: var(--dark); }
+    .nav-toggle { display: none; flex-direction: column; gap: 5px; padding: 8px; background: none; border: none; }
+    .nav-toggle span { width: 20px; height: 1.5px; background: var(--dark); }
+    @media (max-width: 900px) {
+      .nav { padding: 0 24px; }
+      .nav-links { display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; gap: 0; background: var(--bg); padding: 24px; border-bottom: 1px solid var(--border); }
+      .nav-links.open { display: flex; }
+      .nav-links a { padding: 12px 0; }
+      .nav-cta { gap: 8px; }
+      .nav-toggle { display: flex; }
+      .nav-contact { display: none; }
+    }
+
+    /* PAGE */
+    .page { display: none; min-height: 100vh; }
+    .page.active { display: block; }
+
+    /* HERO */
+    .hero { height: 100vh; height: 100svh; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .hero-bg { position: absolute; inset: 0; z-index: 0; }
+    .hero-slide { position: absolute; inset: 0; opacity: 0; transform: scale(1.05); transition: opacity 1.5s var(--ease), transform 8s ease-out; }
+    .hero-slide.active { opacity: 1; transform: scale(1); }
+    .hero-slide img { width: 100%; height: 100%; object-fit: cover; }
+    .hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,10,.15) 0%, rgba(10,10,10,.35) 50%, rgba(10,10,10,.55) 100%); }
+    .hero-content { position: relative; z-index: 10; text-align: center; color: var(--white); padding: 0 24px; max-width: 800px; }
+    .hero-tag { font-size: 10px; letter-spacing: .4em; text-transform: uppercase; opacity: .7; margin-bottom: 24px; animation: fadeUp 1s .2s var(--ease) both; }
+    .hero-title { font-family: Georgia, serif; font-size: clamp(32px, 8vw, 72px); font-weight: 400; line-height: 1.1; margin-bottom: 24px; letter-spacing: -.02em; animation: fadeUp 1s .4s var(--ease) both; }
+    .hero-subtitle { font-size: 14px; letter-spacing: .15em; opacity: .85; max-width: 500px; margin: 0 auto 40px; line-height: 1.8; animation: fadeUp 1s .6s var(--ease) both; }
+    .hero-cta { display: inline-flex; gap: 16px; animation: fadeUp 1s .8s var(--ease) both; }
+    .hero-btn { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; padding: 14px 32px; border: 1px solid rgba(255,255,255,.4); background: transparent; color: var(--white); transition: all .4s var(--ease); }
+    .hero-btn:hover { background: var(--white); color: var(--dark); border-color: var(--white); }
+    .hero-btn.primary { background: var(--white); color: var(--dark); border-color: var(--white); }
+    .hero-btn.primary:hover { background: transparent; color: var(--white); }
+    .hero-scroll { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--white); opacity: .6; animation: fadeUp 1s 1s var(--ease) both; }
+    .hero-scroll span { font-size: 9px; letter-spacing: .25em; text-transform: uppercase; }
+    .hero-scroll-icon { width: 1px; height: 40px; background: linear-gradient(to bottom, rgba(255,255,255,1), transparent); animation: scrollLine 2s infinite; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes scrollLine { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform: scaleY(1); transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+    .hero-dots { position: absolute; bottom: 48px; left: 48px; z-index: 10; display: flex; gap: 12px; }
+    .hero-dot { width: 24px; height: 2px; background: rgba(255,255,255,.3); border: none; transition: all .4s var(--ease); }
+    .hero-dot.active { background: var(--white); width: 40px; }
+    .hero-nav { position: absolute; bottom: 40px; right: 48px; z-index: 10; display: flex; gap: 8px; }
+    .hero-nav-btn { width: 40px; height: 40px; border: 1px solid rgba(255,255,255,.3); background: transparent; color: var(--white); display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all .3s; }
+    .hero-nav-btn:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.5); }
+    @media (max-width: 768px) { .hero-nav, .hero-dots { display: none; } .hero-content { padding: 0 20px; } }
+
+    /* SECTION */
+    .section { padding: var(--section) 48px; max-width: 1400px; margin: 0 auto; }
+    .section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 48px; flex-wrap: wrap; gap: 16px; }
+    .section-title { font-size: 11px; letter-spacing: .35em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+    .section-title span { display: block; font-family: Georgia, serif; font-size: 28px; letter-spacing: 0; text-transform: none; color: var(--dark); margin-top: 8px; line-height: 1.2; }
+    .section-link { font-size: 11px; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; transition: color .3s; }
+    .section-link:hover { color: var(--dark); }
+    .section-link svg { width: 16px; height: 16px; transition: transform .3s; }
+    .section-link:hover svg { transform: translateX(4px); }
+    @media (max-width: 900px) { .section { padding: 80px 24px; } }
+
+    /* CAT GRID */
+    .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-lg); }
+    .cat-card { position: relative; overflow: hidden; cursor: pointer; }
+    .cat-card-img { aspect-ratio: 4/5; overflow: hidden; }
+    .cat-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s var(--ease); }
+    .cat-card:hover .cat-card-img img { transform: scale(1.08); }
+    .cat-card-content { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 32px; background: linear-gradient(to top, rgba(0,0,0,.6) 0%, transparent 60%); opacity: 0; transition: opacity .4s var(--ease); }
+    .cat-card:hover .cat-card-content { opacity: 1; }
+    .cat-card-label { color: var(--white); font-size: 20px; font-weight: 400; letter-spacing: .05em; margin-bottom: 8px; }
+    .cat-card-count { color: rgba(255,255,255,.7); font-size: 11px; letter-spacing: .15em; }
+    @media (max-width: 900px) { .cat-grid { grid-template-columns: 1fr; gap: 24px; } .cat-card-content { opacity: 1; } }
+
+    /* ABOUT */
+    .about { background: var(--bg-alt); }
+    .about-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 80px; align-items: center; }
+    .about-img { position: relative; }
+    .about-img img { width: 100%; aspect-ratio: 3/4; object-fit: cover; }
+    .about-img-accent { position: absolute; top: -20px; left: -20px; right: 20px; bottom: 20px; border: 1px solid var(--accent-warm); pointer-events: none; }
+    .about-content h3 { font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--accent-warm); margin-bottom: 16px; }
+    .about-content h2 { font-family: Georgia, serif; font-size: clamp(28px, 4vw, 40px); font-weight: 400; line-height: 1.2; margin-bottom: 32px; }
+    .about-content p { font-size: 15px; color: var(--muted); line-height: 1.9; margin-bottom: 20px; }
+    .about-stats { display: flex; gap: 48px; margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border); }
+    .about-stat-num { font-family: Georgia, serif; font-size: 36px; color: var(--dark); line-height: 1; }
+    .about-stat-label { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+    @media (max-width: 900px) { .about-grid { grid-template-columns: 1fr; gap: 48px; } .about-img { order: -1; max-width: 400px; margin: 0 auto; } .about-stats { gap: 32px; flex-wrap: wrap; } }
+
+    /* GALLERY PAGE */
+    .gallery-hero { padding: 140px 48px 60px; background: var(--bg); }
+    .gallery-hero h1 { font-family: Georgia, serif; font-size: clamp(32px, 5vw, 48px); font-weight: 400; margin-bottom: 16px; }
+    .gallery-hero p { font-size: 14px; color: var(--muted); letter-spacing: .05em; }
+    .gallery-toolbar { position: sticky; top: 64px; z-index: 100; padding: 20px 48px; background: rgba(250,249,247,.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .gallery-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-btn { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; padding: 8px 16px; background: transparent; border: 1px solid transparent; color: var(--muted); transition: all .3s var(--ease); }
+    .filter-btn:hover { color: var(--dark); }
+    .filter-btn.active { background: var(--dark); color: var(--white); border-color: var(--dark); }
+    .gallery-actions { display: flex; align-items: center; gap: 16px; }
+    .upload-btn { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; padding: 10px 20px; background: transparent; border: 1px solid var(--border); color: var(--muted); display: flex; align-items: center; gap: 8px; transition: all .3s var(--ease); }
+    .upload-btn:hover { border-color: var(--dark); color: var(--dark); }
+    .upload-btn svg { width: 14px; height: 14px; }
+    .upload-count { font-size: 10px; letter-spacing: .12em; color: var(--accent-warm); }
+    #uploadInput { display: none; }
+    @media (max-width: 768px) { .gallery-hero { padding: 120px 24px 40px; } .gallery-toolbar { padding: 16px 24px; top: 64px; } }
+
+    /* MASONRY GRID */
+    .gallery-wrap { padding: 32px 48px 80px; }
+    .masonry-grid { columns: 4 280px; column-gap: var(--gap-lg); }
+    .masonry-item { break-inside: avoid; margin-bottom: var(--gap-lg); position: relative; cursor: pointer; overflow: hidden; }
+    .masonry-item img { width: 100%; display: block; transition: transform .8s var(--ease), filter .5s; filter: brightness(.98) saturate(.95); }
+    .masonry-item:hover img { transform: scale(1.03); filter: brightness(1) saturate(1); }
+    .masonry-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.5) 0%, transparent 40%); opacity: 0; transition: opacity .4s var(--ease); display: flex; flex-direction: column; justify-content: flex-end; padding: 24px; }
+    .masonry-item:hover .masonry-overlay { opacity: 1; }
+    .masonry-title { color: var(--white); font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+    .masonry-meta { color: rgba(255,255,255,.7); font-size: 11px; letter-spacing: .1em; }
+    .masonry-item.is-uploaded::before { content: '已上传'; position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,.5); color: rgba(255,255,255,.85); font-size: 9px; letter-spacing: .1em; padding: 4px 10px; z-index: 5; }
+    .masonry-item .remove-btn { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: rgba(200,60,60,.8); border: none; color: #fff; font-size: 14px; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; z-index: 5; }
+    .masonry-item:hover .remove-btn { opacity: 1; }
+    .gallery-empty { text-align: center; padding: 80px 24px; display: none; }
+    .gallery-empty.visible { display: block; }
+    .gallery-empty-icon { font-size: 48px; opacity: .3; margin-bottom: 16px; }
+    .gallery-empty-text { font-size: 13px; color: var(--muted); letter-spacing: .08em; }
+    @media (max-width: 768px) { .gallery-wrap { padding: 24px; } .masonry-grid { columns: 2 160px; column-gap: 16px; } .masonry-item { margin-bottom: 16px; } }
+
+    /* LIGHTBOX */
+    .lightbox { position: fixed; inset: 0; z-index: 2000; background: rgba(10,10,10,.97); display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: all .4s var(--ease); }
+    .lightbox.open { opacity: 1; visibility: visible; }
+    .lb-container { position: relative; max-width: 95vw; max-height: 90vh; }
+    .lb-img { max-width: 95vw; max-height: 85vh; object-fit: contain; transform: scale(.95); opacity: 0; transition: all .5s var(--ease); }
+    .lightbox.open .lb-img { transform: scale(1); opacity: 1; }
+    .lb-close { position: fixed; top: 24px; right: 24px; width: 44px; height: 44px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); color: var(--white); font-size: 20px; display: flex; align-items: center; justify-content: center; transition: all .3s; }
+    .lb-close:hover { background: rgba(255,255,255,.15); }
+    .lb-nav { position: fixed; top: 50%; transform: translateY(-50%); width: 50px; height: 50px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); color: var(--white); font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all .3s; }
+    .lb-nav:hover { background: rgba(255,255,255,.15); }
+    .lb-prev { left: 24px; }
+    .lb-next { right: 24px; }
+    .lb-info { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); text-align: center; color: rgba(255,255,255,.6); }
+    .lb-title { font-size: 16px; color: rgba(255,255,255,.9); margin-bottom: 6px; }
+    .lb-meta { font-size: 11px; letter-spacing: .15em; }
+    .lb-counter { position: fixed; top: 28px; left: 28px; font-size: 11px; letter-spacing: .2em; color: rgba(255,255,255,.4); }
+    .lb-thumbs { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+    .lb-thumb { width: 56px; height: 56px; overflow: hidden; opacity: .4; transition: opacity .25s; cursor: pointer; border: 1px solid rgba(255,255,255,.1); }
+    .lb-thumb:hover, .lb-thumb.active { opacity: 1; border-color: rgba(255,255,255,.3); }
+    .lb-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    @media (max-width: 768px) { .lb-nav, .lb-info, .lb-thumbs { display: none; } }
+
+    /* BOOKING PAGE */
+    .booking-hero { padding: 140px 48px 60px; background: var(--bg-alt); }
+    .booking-hero h1 { font-family: Georgia, serif; font-size: clamp(28px, 4vw, 40px); font-weight: 400; margin-bottom: 12px; }
+    .booking-hero p { font-size: 13px; color: var(--muted); letter-spacing: .05em; }
+    .packages-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-lg); padding: 60px 48px; max-width: 1400px; margin: 0 auto; }
+    .pkg-card { background: var(--white); border: 1px solid var(--border); padding: 36px 28px; position: relative; transition: all .4s var(--ease); }
+    .pkg-card:hover { transform: translateY(-6px); box-shadow: 0 24px 48px rgba(0,0,0,.06); }
+    .pkg-card.featured { border-color: var(--accent-warm); }
+    .pkg-card.featured::before { content: '热门'; position: absolute; top: -1px; right: 28px; background: var(--accent-warm); color: var(--white); font-size: 9px; letter-spacing: .15em; padding: 6px 12px; }
+    .pkg-name { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+    .pkg-price { font-family: Georgia, serif; font-size: 32px; color: var(--dark); margin-bottom: 4px; }
+    .pkg-price span { font-family: 'Helvetica Neue', sans-serif; font-size: 13px; color: var(--muted); font-weight: 400; }
+    .pkg-desc { font-size: 13px; color: var(--muted); line-height: 1.7; margin: 16px 0 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .pkg-features { list-style: none; margin-bottom: 28px; }
+    .pkg-features li { font-size: 12px; color: var(--muted); padding: 8px 0; padding-left: 20px; position: relative; }
+    .pkg-features li::before { content: '✓'; position: absolute; left: 0; color: var(--accent-warm); font-size: 10px; }
+    .pkg-btn { width: 100%; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; padding: 14px; background: var(--dark); border: 1px solid var(--dark); color: var(--white); transition: all .3s var(--ease); }
+    .pkg-btn:hover { background: transparent; color: var(--dark); }
+    @media (max-width: 900px) { .packages-grid { grid-template-columns: 1fr; max-width: 480px; padding: 40px 24px; } .booking-hero { padding: 120px 24px 40px; } }
+
+    /* BOOKING FORM */
+    .booking-form-section { padding: 60px 48px 100px; max-width: 1400px; margin: 0 auto; }
+    .booking-form-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 80px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .form-group label .req { color: var(--accent-warm); }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 14px 16px; background: var(--white); border: 1px solid var(--border); font-size: 14px; color: var(--text); font-family: inherit; transition: border-color .3s; outline: none; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent-warm); }
+    .form-group textarea { min-height: 120px; resize: vertical; }
+    .form-submit { font-size: 10px; letter-spacing: .25em; text-transform: uppercase; padding: 16px 40px; background: var(--dark); border: none; color: var(--white); transition: all .3s var(--ease); margin-top: 12px; }
+    .form-submit:hover { background: #333; transform: translateY(-2px); }
+    .contact-info h3 { font-size: 11px; letter-spacing: .25em; text-transform: uppercase; color: var(--muted); margin-bottom: 24px; }
+    .contact-info p { font-size: 14px; color: var(--muted); line-height: 2; margin-bottom: 24px; }
+    .contact-links { display: flex; gap: 12px; flex-wrap: wrap; }
+    .contact-link { font-size: 11px; letter-spacing: .12em; padding: 12px 20px; border: 1px solid var(--border); color: var(--muted); transition: all .25s; }
+    .contact-link:hover { border-color: var(--dark); color: var(--dark); }
+    .contact-notes { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--border); }
+    .contact-notes h4 { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+    .contact-notes p { font-size: 12px; line-height: 2; }
+    @media (max-width: 900px) { .booking-form-section { padding: 40px 24px 80px; } .booking-form-grid { grid-template-columns: 1fr; gap: 48px; } .form-row { grid-template-columns: 1fr; } }
+
+    /* FOOTER */
+    .footer { background: var(--dark); color: rgba(255,255,255,.5); padding: 64px 48px 40px; }
+    .footer-grid { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; }
+    .footer-brand h3 { font-size: 13px; font-weight: 500; letter-spacing: .35em; color: rgba(255,255,255,.85); margin-bottom: 16px; }
+    .footer-brand p { font-size: 13px; line-height: 1.8; margin-bottom: 24px; }
+    .footer-social { display: flex; gap: 12px; }
+    .footer-social a { width: 36px; height: 36px; border: 1px solid rgba(255,255,255,.15); display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all .3s; }
+    .footer-social a:hover { border-color: rgba(255,255,255,.4); color: var(--white); }
+    .footer-col h4 { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.7); margin-bottom: 20px; }
+    .footer-col ul { list-style: none; }
+    .footer-col li { margin-bottom: 12px; }
+    .footer-col a { font-size: 13px; transition: color .25s; }
+    .footer-col a:hover { color: var(--white); }
+    .footer-bottom { max-width: 1400px; margin: 48px auto 0; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.08); display: flex; justify-content: space-between; align-items: center; font-size: 11px; letter-spacing: .08em; }
+    @media (max-width: 900px) { .footer { padding: 48px 24px 32px; } .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; } .footer-brand { grid-column: span 2; } .footer-bottom { flex-direction: column; gap: 12px; text-align: center; } }
+    @media (max-width: 500px) { .footer-grid { grid-template-columns: 1fr; } .footer-brand { grid-column: span 1; } }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(24px); background: var(--dark); color: var(--white); padding: 14px 32px; font-size: 11px; letter-spacing: .15em; z-index: 3000; opacity: 0; transition: all .4s var(--ease); pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.warn { background: #a06840; }
+
+    /* REVEAL */
+    .reveal { opacity: 0; transform: translateY(40px); transition: all .8s var(--ease); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-d1 { transition-delay: .1s; }
+    .reveal-d2 { transition-delay: .2s; }
+    .reveal-d3 { transition-delay: .3s; }
+    .reveal-d4 { transition-delay: .4s; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <a href="#" class="nav-logo" onclick="showPage('home');return false;">STUDIO</a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#" class="active" data-page="home" onclick="showPage('home');return false;">首页</a></li>
+    <li><a href="#" data-page="gallery" onclick="showPage('gallery');return false;">作品</a></li>
+    <li><a href="#" data-page="booking" onclick="showPage('booking');return false;">预约</a></li>
+  </ul>
+  <div class="nav-cta">
+    <button class="nav-upload" onclick="document.getElementById('uploadInput').click()">上传照片</button>
+    <button class="nav-contact" onclick="showPage('booking');return false;">联系我</button>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<input type="file" id="uploadInput" accept="image/*" multiple />
+
+<!-- PAGE: HOME -->
+<div id="page-home" class="page active">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="hero-slide active">
+        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80" alt="" />
+      </div>
+      <div class="hero-slide">
+        <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80" alt="" />
+      </div>
+      <div class="hero-slide">
+        <img src="https://images.unsplash.com/photo-1682687220742-413d21badc2f?w=1920&q=80" alt="" />
+      </div>
+      <div class="hero-slide">
+        <img src="https://images.unsplash.com/photo-1501785888041-1323e15af411?w=1920&q=80" alt="" />
+      </div>
+      <div class="hero-overlay"></div>
+    </div>
+    
+    <div class="hero-content">
+      <p class="hero-tag">独立摄影师 · 深圳</p>
+      <h1 class="hero-title">捕捉生活的温度</h1>
+      <p class="hero-subtitle">专注于人像、风光与街头摄影，用镜头讲述每一个值得被记住的故事</p>
+      <div class="hero-cta">
+        <button class="hero-btn primary" onclick="showPage('gallery')">浏览作品</button>
+        <button class="hero-btn" onclick="showPage('booking')">预约拍摄</button>
+      </div>
+    </div>
+    
+    <div class="hero-scroll">
+      <span>向下滚动</span>
+      <div class="hero-scroll-icon"></div>
+    </div>
+    
+    <div class="hero-dots" id="heroDots">
+      <button class="hero-dot active" onclick="goToSlide(0)"></button>
+      <button class="hero-dot" onclick="goToSlide(1)"></button>
+      <button class="hero-dot" onclick="goToSlide(2)"></button>
+      <button class="hero-dot" onclick="goToSlide(3)"></button>
+    </div>
+    
+    <div class="hero-nav">
+      <button class="hero-nav-btn" onclick="changeSlide(-1)">←</button>
+      <button class="hero-nav-btn" onclick="changeSlide(1)">→</button>
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="section">
+    <div class="section-header reveal">
+      <h2 class="section-title">精选作品<span>探索不同风格</span></h2>
+      <a href="#" class="section-link" onclick="showPage('gallery');return false;">
+        查看全部
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+    
+    <div class="cat-grid">
+      <div class="cat-card reveal reveal-d1" onclick="showPage('gallery');setTimeout(()=>setFilter('portrait'),100)">
+        <div class="cat-card-img">
+          <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&q=80" alt="人像摄影" />
+        </div>
+        <div class="cat-card-content">
+          <h3 class="cat-card-label">人像摄影</h3>
+          <p class="cat-card-count">38 张作品</p>
+        </div>
+      </div>
+      <div class="cat-card reveal reveal-d2" onclick="showPage('gallery');setTimeout(()=>setFilter('landscape'),100)">
+        <div class="cat-card-img">
+          <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80" alt="风光摄影" />
+        </div>
+        <div class="cat-card-content">
+          <h3 class="cat-card-label">风光摄影</h3>
+          <p class="cat-card-count">45 张作品</p>
+        </div>
+      </div>
+      <div class="cat-card reveal reveal-d3" onclick="showPage('gallery');setTimeout(()=>setFilter('street'),100)">
+        <div class="cat-card-img">
+          <img src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80" alt="街头摄影" />
+        </div>
+        <div class="cat-card-content">
+          <h3 class="cat-card-label">街头摄影</h3>
+          <p class="cat-card-count">32 张作品</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section class="about">
+    <div class="section">
+      <div class="about-grid">
+        <div class="about-img reveal">
+          <img src="https://images.unsplash.com/photo-1552168324-d612d77725e3?w=800&q=80" alt="摄影师" />
+          <div class="about-img-accent"></div>
+        </div>
+        <div class="about-content reveal reveal-d2">
+          <h3>关于我</h3>
+          <h2>用镜头，讲好每一个故事</h2>
+          <p>我相信每一个平凡的瞬间，都藏着值得被定格的美好。无论是人物的神情、自然的光影，还是城市角落的宁静，我都在寻找那个按下快门的最佳时机。</p>
+          <p>器材是 Nikon Z5II，风格偏向自然、真实、有温度。希望用镜头讲好每一个故事，如果你也在寻找能读懂你故事的摄影师，欢迎联系我。</p>
+          <div class="about-stats">
+            <div>
+              <div class="about-stat-num">120<span style="font-size:18px">+</span></div>
+              <div class="about-stat-label">拍摄作品</div>
+            </div>
+            <div>
+              <div class="about-stat-num">8</div>
+              <div class="about-stat-label">拍摄年份</div>
+            </div>
+            <div>
+              <div class="about-stat-num">30<span style="font-size:18px">+</span></div>
+              <div class="about-stat-label">合作客户</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- PAGE: GALLERY -->
+<div id="page-gallery" class="page">
+  <div class="gallery-hero">
+    <h1>作品集</h1>
+    <p>精选作品 · 持续更新</p>
+  </div>
+  
+  <div class="gallery-toolbar">
+    <div class="gallery-filters">
+      <button class="filter-btn active" onclick="filterGallery(this, 'all')">全部</button>
+      <button class="filter-btn" onclick="filterGallery(this, 'portrait')">人像</button>
+      <button class="filter-btn" onclick="filterGallery(this, 'landscape')">风光</button>
+      <button class="filter-btn" onclick="filterGallery(this, 'street')">街拍</button>
+      <button class="filter-btn" onclick="filterGallery(this, 'nature')">自然</button>
+      <button class="filter-btn" id="uploadedFilterBtn" style="display:none" onclick="filterGallery(this, 'uploaded')">我的上传</button>
+    </div>
+    <div class="gallery-actions">
+      <button class="upload-btn" onclick="document.getElementById('uploadInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        上传照片
+      </button>
+      <span class="upload-count" id="uploadCount"></span>
+    </div>
+  </div>
+  
+  <div class="gallery-empty" id="galleryEmpty">
+    <div class="gallery-empty-icon">📷</div>
+    <p class="gallery-empty-text">暂无符合条件的作品</p>
+  </div>
+  
+  <div class="gallery-wrap">
+    <div class="masonry-grid" id="galleryGrid">
+      <!-- Items injected here -->
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: BOOKING -->
+<div id="page-booking" class="page">
+  <div class="booking-hero">
+    <h1>预约拍摄</h1>
+    <p>选择适合你的套餐，填写信息，我会尽快联系你</p>
+  </div>
+  
+  <div class="packages-grid">
+    <div class="pkg-card reveal">
+      <div class="pkg-name">基础约拍</div>
+      <div class="pkg-price">¥680 <span>/ 2小时</span></div>
+      <p class="pkg-desc">适合个人写真、日常记录，室内外均可</p>
+      <ul class="pkg-features">
+        <li>精修 8 张</li>
+        <li>底片全送</li>
+        <li>线上交付</li>
+      </ul>
+      <button class="pkg-btn" onclick="selectPkg(0)">选择此套餐</button>
+    </div>
+    <div class="pkg-card featured reveal reveal-d1">
+      <div class="pkg-name">标准拍摄</div>
+      <div class="pkg-price">¥1280 <span>/ 半天</span></div>
+      <p class="pkg-desc">适合情侣、闺蜜、外景创作，风格定制</p>
+      <ul class="pkg-features">
+        <li>精修 18 张</li>
+        <li>底片全送</li>
+        <li>线上交付</li>
+        <li>1组造型</li>
+      </ul>
+      <button class="pkg-btn" onclick="selectPkg(1)">选择此套餐</button>
+    </div>
+    <div class="pkg-card reveal reveal-d2">
+      <div class="pkg-name">全天创作</div>
+      <div class="pkg-price">¥2380 <span>/ 一天</span></div>
+      <p class="pkg-desc">适合婚礼记录、商业活动、深度创作</p>
+      <ul class="pkg-features">
+        <li>精修 40 张</li>
+        <li>底片全送</li>
+        <li>线上+实物交付</li>
+        <li>多组造型</li>
+      </ul>
+      <button class="pkg-btn" onclick="selectPkg(2)">选择此套餐</button>
+    </div>
+  </div>
+  
+  <div class="booking-form-section">
+    <div class="booking-form-grid">
+      <form class="booking-form reveal" onsubmit="handleBooking(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label>姓名 <span class="req">*</span></label>
+            <input type="text" placeholder="你的名字" required />
+          </div>
+          <div class="form-group">
+            <label>手机 <span class="req">*</span></label>
+            <input type="tel" placeholder="138xxxx8888" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>邮箱</label>
+          <input type="email" placeholder="your@email.com" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>预约日期 <span class="req">*</span></label>
+            <input type="date" required id="bookingDate" />
+          </div>
+          <div class="form-group">
+            <label>套餐选择 <span class="req">*</span></label>
+            <select required id="pkgSelect">
+              <option value="">请选择套餐</option>
+              <option value="0">基础约拍 ¥680</option>
+              <option value="1">标准拍摄 ¥1280</option>
+              <option value="2">全天创作 ¥2380</option>
+              <option value="custom">定制需求</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>备注 / 想说的话</label>
+          <textarea placeholder="告诉我你的拍摄想法，比如风格偏好、拍摄地点、人数..."></textarea>
+        </div>
+        <button type="submit" class="form-submit">提交预约</button>
+      </form>
+      
+      <div class="contact-info reveal reveal-d1">
+        <h3>联系方式</h3>
+        <p>如有其他问题，也欢迎直接联系。<br />工作时间：周一至周六 10:00 - 20:00<br />回复通常在 24 小时内。</p>
+        <div class="contact-links">
+          <a href="#" class="contact-link">📱 微信</a>
+          <a href="#" class="contact-link">📷 小红书</a>
+          <a href="#" class="contact-link">✉️ 邮箱</a>
+        </div>
+        <div class="contact-notes">
+          <h4>预约须知</h4>
+          <p>预约需支付 30% 定金，正式拍摄前 3 天可免费改期一次。取消预约将扣除已支付定金的 50% 作为违约金。如遇天气等不可抗因素，双方协商改期。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <h3>STUDIO</h3>
+      <p>独立摄影师，用镜头捕捉生活的温度。专注人像、风光与街头摄影。</p>
+      <div class="footer-social">
+        <a href="#">📷</a>
+        <a href="#">🐦</a>
+        <a href="#">📘</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>导航</h4>
+      <ul>
+        <li><a href="#" onclick="showPage('home');return false;">首页</a></li>
+        <li><a href="#" onclick="showPage('gallery');return false;">作品</a></li>
+        <li><a href="#" onclick="showPage('booking');return false;">预约</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>分类</h4>
+      <ul>
+        <li><a href="#" onclick="showPage('gallery');setTimeout(()=>setFilter('portrait'),100);return false;">人像摄影</a></li>
+        <li><a href="#" onclick="showPage('gallery');setTimeout(()=>setFilter('landscape'),100);return false;">风光摄影</a></li>
+        <li><a href="#" onclick="showPage('gallery');setTimeout(()=>setFilter('street'),100);return false;">街头摄影</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>联系</h4>
+      <ul>
+        <li><a href="#">深圳</a></li>
+        <li><a href="#">wechat@example.com</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 STUDIO. All rights reserved.</span>
+    <span>Made with 🖤 in Shenzhen</span>
+  </div>
+</footer>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <div class="lb-counter" id="lbCounter">1 / 16</div>
+  <button class="lb-close" onclick="closeLightbox()">✕</button>
+  <button class="lb-nav lb-prev" onclick="lbPrev()">←</button>
+  <div class="lb-container">
+    <img class="lb-img" id="lbImg" src="" alt="" />
+  </div>
+  <button class="lb-nav lb-next" onclick="lbNext()">→</button>
+  <div class="lb-thumbs" id="lbThumbs"></div>
+  <div class="lb-info">
+    <div class="lb-title" id="lbTitle"></div>
+    <div class="lb-meta" id="lbMeta"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== DATA ===== */
+const galleryData = [
+  { cat: 'landscape', title: '暮色海岸', meta: '风光 · 深圳', src: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80' },
+  { cat: 'portrait', title: '午后光影', meta: '人像 · 室内', src: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&q=80' },
+  { cat: 'street', title: '城市黄昏', meta: '街拍 · 香港', src: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80' },
+  { cat: 'nature', title: '林间晨雾', meta: '自然 · 户外', src: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80' },
+  { cat: 'portrait', title: '静水深流', meta: '人像 · 黑白', src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&q=80' },
+  { cat: 'landscape', title: '天际线', meta: '风光 · 城市', src: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80' },
+  { cat: 'street', title: '夜归', meta: '街拍 · 深圳', src: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=800&q=80' },
+  { cat: 'nature', title: '花开有时', meta: '自然 · 植物', src: 'https://images.unsplash.com/photo-1490750967868-88df56991419?w=800&q=80' },
+  { cat: 'landscape', title: '城市轮廓', meta: '风光 · 航拍', src: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&q=80' },
+  { cat: 'portrait', title: '目光', meta: '人像 · 近摄', src: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=800&q=80' },
+  { cat: 'nature', title: '银河', meta: '自然 · 星空', src: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80' },
+  { cat: 'street', title: '老巷深处', meta: '街拍 · 怀旧', src: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=800&q=80' },
+  { cat: 'landscape', title: '山川', meta: '风光 · 户外', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80' },
+  { cat: 'portrait', title: '微笑', meta: '人像 · 日常', src: 'https://images.unsplash.com/photo-1529626455594-4ff080803349?w=800&q=80' },
+  { cat: 'nature', title: '海边礁石', meta: '自然 · 海景', src: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&q=80' },
+  { cat: 'street', title: '雨中', meta: '街拍 · 情绪', src: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=800&q=80' }
+];
+
+/* ===== INIT GALLERY ===== */
+function initGallery() {
+  const grid = document.getElementById('galleryGrid');
+  galleryData.forEach((item, i) => {
+    const el = document.createElement('div');
+    el.className = 'masonry-item';
+    el.dataset.cat = item.cat;
+    el.dataset.title = item.title;
+    el.dataset.meta = item.meta;
+    el.onclick = () => openLightbox(i);
+    el.innerHTML = `
+      <img src="${item.src}" alt="${item.title}" loading="lazy" />
+      <div class="masonry-overlay">
+        <h3 class="masonry-title">${item.title}</h3>
+        <p class="masonry-meta">${item.meta}</p>
+      </div>
+    `;
+    grid.appendChild(el);
+  });
+}
+
+/* ===== NAV SCROLL ===== */
+window.addEventListener('scroll', () => {
+  const nav = document.getElementById('nav');
+  nav.classList.toggle('scrolled', window.scrollY > 50);
+});
+
+/* ===== PAGE ROUTING ===== */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.classList.toggle('active', a.dataset.page === name);
+  });
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  document.getElementById('navLinks').classList.remove('open');
+  refreshReveal();
+}
+
+/* ===== HERO CAROUSEL ===== */
+let slideIdx = 0;
+const slides = document.querySelectorAll('.hero-slide');
+const dots = document.querySelectorAll('.hero-dot');
+let autoTimer;
+
+function goToSlide(n) {
+  slides[slideIdx].classList.remove('active');
+  dots[slideIdx].classList.remove('active');
+  slideIdx = n;
+  if (slideIdx >= slides.length) slideIdx = 0;
+  if (slideIdx < 0) slideIdx = slides.length - 1;
+  slides[slideIdx].classList.add('active');
+  dots[slideIdx].classList.add('active');
+}
+
+function changeSlide(dir) {
+  goToSlide(slideIdx + dir);
+  resetAuto();
+}
+
+function resetAuto() {
+  clearInterval(autoTimer);
+  autoTimer = setInterval(() => goToSlide(slideIdx + 1), 6000);
+}
+
+resetAuto();
+
+/* ===== GALLERY FILTER ===== */
+let currentFilter = 'all';
+
+function filterGallery(btn, cat) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  currentFilter = cat;
+  renderGallery();
+}
+
+function setFilter(cat) {
+  setTimeout(() => {
+    const btns = document.querySelectorAll('.filter-btn');
+    let target = null;
+    btns.forEach(b => {
+      const onclick = b.getAttribute('onclick') || '';
+      if (onclick.includes("'" + cat + "'")) target = b;
+    });
+    if (!target) target = btns[0];
+    filterGallery(target, cat);
+  }, 100);
+}
+
+function renderGallery() {
+  const grid = document.getElementById('galleryGrid');
+  grid.innerHTML = '';
+  
+  let visibleCount = 0;
+  
+  // Original items
+  galleryData.forEach((item, i) => {
+    if (currentFilter === 'all' || item.cat === currentFilter || currentFilter === 'uploaded') {
+      visibleCount++;
+      const el = document.createElement('div');
+      el.className = 'masonry-item';
+      el.dataset.cat = item.cat;
+      el.dataset.title = item.title;
+      el.dataset.meta = item.meta;
+      const idx = i;
+      el.onclick = () => openLightbox(idx);
+      el.innerHTML = `
+        <img src="${item.src}" alt="${item.title}" loading="lazy" />
+        <div class="masonry-overlay">
+          <h3 class="masonry-title">${item.title}</h3>
+          <p class="masonry-meta">${item.meta}</p>
+        </div>
+      `;
+      grid.appendChild(el);
+    }
+  });
+  
+  // Uploaded items
+  if (currentFilter === 'all' || currentFilter === 'uploaded') {
+    uploadedPhotos.forEach((photo, i) => {
+      visibleCount++;
+      const el = document.createElement('div');
+      el.className = 'masonry-item is-uploaded';
+      el.dataset.cat = 'uploaded';
+      el.dataset.title = photo.name || '我的照片';
+      el.dataset.meta = '上传于 ' + photo.date;
+      el.dataset.uploadId = photo.id;
+      const idx = galleryData.length + i;
+      el.onclick = function(e) {
+        if (e.target.classList.contains('remove-btn')) return;
+        openLightbox(idx);
+      };
+      el.innerHTML = `
+        <button class="remove-btn" onclick="removeUpload('${photo.id}', event)">✕</button>
+        <img src="${photo.dataUrl}" alt="${photo.name || '我的照片'}" loading="lazy" />
+        <div class="masonry-overlay">
+          <h3 class="masonry-title">${photo.name || '我的照片'}</h3>
+          <p class="masonry-meta">上传于 ${photo.date}</p>
+        </div>
+      `;
+      grid.appendChild(el);
+    });
+  }
+  
+  // Check empty
+  const empty = document.getElementById('galleryEmpty');
+  empty.classList.toggle('visible', visibleCount === 0);
+}
+
+/* ===== UPLOAD SYSTEM ===== */
+const MAX_SIZE = 10 * 1024 * 1024;
+let uploadedPhotos = [];
+
+function loadUploads() {
+  try {
+    const saved = localStorage.getItem('studio_uploads');
+    if (saved) {
+      uploadedPhotos = JSON.parse(saved);
+    }
+  } catch(e) {}
+  updateUploadCount();
+}
+
+function saveUploads() {
+  try {
+    const toSave = uploadedPhotos.slice(-20);
+    localStorage.setItem('studio_uploads', JSON.stringify(toSave));
+  } catch(e) {
+    showToast('存储空间不足，建议清理部分上传照片', true);
+  }
+}
+
+function updateUploadCount() {
+  const el = document.getElementById('uploadCount');
+  el.textContent = uploadedPhotos.length > 0 ? `已上传 ${uploadedPhotos.length} 张` : '';
+  
+  const btn = document.getElementById('uploadedFilterBtn');
+  btn.style.display = uploadedPhotos.length > 0 ? '' : 'none';
+  btn.textContent = uploadedPhotos.length > 0 ? `我的上传 (${uploadedPhotos.length})` : '';
+}
+
+function removeUpload(id, event) {
+  event.stopPropagation();
+  uploadedPhotos = uploadedPhotos.filter(p => p.id !== id);
+  saveUploads();
+  updateUploadCount();
+  renderGallery();
+  showToast('已移除');
+}
+
+document.getElementById('uploadInput').addEventListener('change', function(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  
+  let added = 0;
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > MAX_SIZE) {
+      showToast(`"${file.name}" 超过 10MB 限制`, true);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      uploadedPhotos.push({
+        id: Date.now() + Math.random().toString(36).slice(2, 8),
+        dataUrl: ev.target.result,
+        name: file.name.replace(/\.[^.]+$/, ''),
+        date: new Date().toLocaleDateString('zh-CN')
+      });
+      saveUploads();
+      updateUploadCount();
+      added++;
+      if (added > 0) {
+        showToast(`已上传 ${added} 张照片`);
+      }
+      if (added === 1 && uploadedPhotos.length === 1) {
+        setTimeout(() => filterGallery(null, 'uploaded'), 100);
+      }
+      renderGallery();
+    };
+    reader.readAsDataURL(file);
+  });
+  
+  e.target.value = '';
+});
+
+/* ===== LIGHTBOX ===== */
+let lbIdx = 0;
+
+function getAllItems() {
+  let items = [...galleryData];
+  if (currentFilter === 'all' || currentFilter === 'uploaded') {
+    uploadedPhotos.forEach(p => {
+      items.push({ title: p.name || '我的照片', meta: '上传于 ' + p.date, src: p.dataUrl, uploaded: true, id: p.id });
+    });
+  }
+  if (currentFilter !== 'all' && currentFilter !== 'uploaded') {
+    items = items.filter(i => i.cat === currentFilter);
+  }
+  return items;
+}
+
+function openLightbox(idx) {
+  const items = getAllItems();
+  const item = items[idx];
+  if (!item) return;
+  document.getElementById('lbImg').src = item.src || item.dataUrl;
+  document.getElementById('lbTitle').textContent = item.title;
+  document.getElementById('lbMeta').textContent = item.meta;
+  lbIdx = idx;
+  updateLbCounter(items.length);
+  renderThumbs(items);
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function lbPrev() {
+  const items = getAllItems();
+  lbIdx = (lbIdx - 1 + items.length) % items.length;
+  openLightbox(lbIdx);
+}
+
+function lbNext() {
+  const items = getAllItems();
+  lbIdx = (lbIdx + 1) % items.length;
+  openLightbox(lbIdx);
+}
+
+function updateLbCounter(total) {
+  document.getElementById('lbCounter').textContent = `${lbIdx + 1} / ${total}`;
+}
+
+function renderThumbs(items) {
+  const container = document.getElementById('lbThumbs');
+  container.innerHTML = '';
+  const others = items.filter((_, i) => i !== lbIdx).slice(0, 5);
+  others.forEach((item, i) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'lb-thumb';
+    const idx = getAllItems().indexOf(item);
+    thumb.innerHTML = `<img src="${item.src || item.dataUrl}" alt="" />`;
+    thumb.onclick = () => openLightbox(idx);
+    container.appendChild(thumb);
+  });
+}
+
+document.getElementById('lightbox').addEventListener('click', e => {
+  if (e.target.id === 'lightbox' || e.target.classList.contains('lb-container')) closeLightbox();
+});
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') lbPrev();
+  if (e.key === 'ArrowRight') lbNext();
+});
+
+/* ===== BOOKING ===== */
+function selectPkg(n) {
+  showPage('booking');
+  document.getElementById('pkgSelect').value = n;
+}
+
+function handleBooking(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('.form-submit');
+  btn.textContent = '已提交 ✓';
+  btn.style.background = '#6a8a6a';
+  setTimeout(() => {
+    btn.textContent = '提交预约';
+    btn.style.background = '';
+  }, 4000);
+}
+
+// Set min date to today
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('bookingDate').min = today;
+
+/* ===== TOAST ===== */
+function showToast(msg, warn) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (warn ? ' warn' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+
+/* ===== SCROLL REVEAL ===== */
+function refreshReveal() {
+  const els = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: .15 });
+  els.forEach(el => obs.observe(el));
+}
+
+/* ===== SERVICE WORKER ===== */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(reg => console.log('SW registered'))
+      .catch(err => console.log('SW failed', err));
+  });
+}
+
+/* ===== INIT ===== */
+initGallery();
+loadUploads();
+refreshReveal();
+</script>
+</body>
+</html>
