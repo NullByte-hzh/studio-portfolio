@@ -1,8 +1,9 @@
-const CACHE_NAME = 'studio-v1';
+const CACHE_NAME = 'studio-v2';
 const ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon-192.svg'
 ];
 
 // 安装时缓存核心资源
