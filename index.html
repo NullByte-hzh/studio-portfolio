@@ -525,25 +525,25 @@
         <div class="form-row">
           <div class="form-group">
             <label>姓名 <span class="req">*</span></label>
-            <input type="text" placeholder="你的名字" required />
+            <input type="text" name="name" placeholder="你的名字" required />
           </div>
           <div class="form-group">
             <label>手机 <span class="req">*</span></label>
-            <input type="tel" placeholder="138xxxx8888" required />
+            <input type="tel" name="phone" placeholder="138xxxx8888" required />
           </div>
         </div>
         <div class="form-group">
           <label>邮箱</label>
-          <input type="email" placeholder="your@email.com" />
+          <input type="email" name="email" placeholder="your@email.com" />
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>预约日期 <span class="req">*</span></label>
-            <input type="date" required id="bookingDate" />
+            <input type="date" name="date" required id="bookingDate" />
           </div>
           <div class="form-group">
             <label>套餐选择 <span class="req">*</span></label>
-            <select required id="pkgSelect">
+            <select name="package" required id="pkgSelect">
               <option value="">请选择套餐</option>
               <option value="0">基础约拍 ¥680</option>
               <option value="1">标准拍摄 ¥1280</option>
@@ -554,7 +554,7 @@
         </div>
         <div class="form-group">
           <label>备注 / 想说的话</label>
-          <textarea placeholder="告诉我你的拍摄想法，比如风格偏好、拍摄地点、人数..."></textarea>
+          <textarea name="message" placeholder="告诉我你的拍摄想法，比如风格偏好、拍摄地点、人数..." required></textarea>
         </div>
         <button type="submit" class="form-submit">提交预约</button>
       </form>
