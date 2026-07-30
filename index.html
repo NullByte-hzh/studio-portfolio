@@ -20,10 +20,6 @@
   <link rel="icon" type="image/svg+xml" href="icon-192.svg" />
   <link rel="apple-touch-icon" href="icon-192.svg" />
   <link rel="preload" as="image" href="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80">
-  <!-- Leaflet CSS for map -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <!-- EXIF JS for reading photo metadata -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js"></script>
   
@@ -1152,54 +1148,85 @@ function toggleSlideshow() {
 
 /* ===== MAP ===== */
 let map = null;
-function initMap() {
-  if (!document.getElementById('photoMap')) return;
-  
-  // Initialize map centered on China
-  map = L.map('photoMap').setView([28, 110], 4);
-  
-  // Use OpenStreetMap (free, no API key needed)
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-  
-  // Add markers for photos that have coordinates
-  const hasCoordinates = galleryData.filter(item => item.lat && item.lng);
-  
-  if (hasCoordinates.length === 0) {
+let leafletLoaded = false;
+
+function loadLeaflet(callback) {
+  if (leafletLoaded) {
+    callback();
     return;
   }
   
-  // Group markers by approximate location
-  const markers = {};
-  hasCoordinates.forEach(item => {
-    const key = `${item.lat.toFixed(3)},${item.lng.toFixed(3)}`;
-    if (!markers[key]) {
-      markers[key] = [];
+  // Load CSS
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+  link.crossOrigin = 'anonymous';
+  document.head.appendChild(link);
+  
+  // Load JS
+  const script = document.createElement('script');
+  script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+  script.crossOrigin = 'anonymous';
+  script.onload = function() {
+    leafletLoaded = true;
+    callback();
+  };
+  document.head.appendChild(script);
+}
+
+function initMap() {
+  if (!document.getElementById('photoMap')) return;
+  
+  // Lazy load Leaflet
+  loadLeaflet(function() {
+    // Initialize map centered on China
+    map = L.map('photoMap').setView([28, 110], 4);
+    
+    // Use OpenStreetMap (free, no API key needed)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Add markers for photos that have coordinates
+    const hasCoordinates = galleryData.filter(item => item.lat && item.lng);
+    
+    if (hasCoordinates.length === 0) {
+      return;
     }
-    markers[key].push(item);
-  });
-  
-  // Add markers to map
-  Object.keys(markers).forEach(key => {
-    const [lat, lng] = key.split(',').map(parseFloat);
-    const items = markers[key];
-    const marker = L.marker([lat, lng]).addTo(map);
-    let popupContent = `<div style="font-weight:bold; margin-bottom:4px;">${items.length} 张作品</div><ul style="margin:4px 0 0 0; padding-left:16px;">`;
-    items.forEach(item => {
-      popupContent += `<li><a href="#" onclick="openMapPhoto(${galleryData.indexOf(item)}); return false;">${item.title}</a></li>`;
+    
+    // Group markers by approximate location
+    const markers = {};
+    hasCoordinates.forEach(item => {
+      const key = `${item.lat.toFixed(3)},${item.lng.toFixed(3)}`;
+      if (!markers[key]) {
+        markers[key] = [];
+      }
+      markers[key].push(item);
     });
-    popupContent += '</ul>';
-    marker.bindPopup(popupContent);
+    
+    // Add markers to map
+    Object.keys(markers).forEach(key => {
+      const [lat, lng] = key.split(',').map(parseFloat);
+      const items = markers[key];
+      const marker = L.marker([lat, lng]).addTo(map);
+      let popupContent = `<div style="font-weight:bold; margin-bottom:4px;">${items.length} 张作品</div><ul style="margin:4px 0 0 0; padding-left:16px;">`;
+      items.forEach(item => {
+        popupContent += `<li><a href="#" onclick="openMapPhoto(${galleryData.indexOf(item)}); return false;">${item.title}</a></li>`;
+      });
+      popupContent += '</ul>';
+      marker.bindPopup(popupContent);
+    });
+    
+    // If we have markers, fit bounds
+    if (hasCoordinates.length > 0) {
+      const group = new L.featureGroup(Object.values(markers).map((items, i) => 
+        L.marker([items[0].lat, items[0].lng])
+      ));
+      map.fitBounds(group.getBounds());
+    }
   });
-  
-  // If we have markers, fit bounds
-  if (hasCoordinates.length > 0) {
-    const group = new L.featureGroup(Object.values(markers).map((items, i) => 
-      L.marker([items[0].lat, items[0].lng])
-    ));
-    map.fitBounds(group.getBounds());
-  }
 }
 
 function openMapPhoto(idx) {
@@ -1365,9 +1392,11 @@ initGallery();
 loadUploads();
 refreshReveal();
 initDarkMode();
-// Initialize map when map page becomes visible
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(initMap, 100);
+// Initialize map only when map page becomes visible
+document.addEventListener('click', function(e) {
+  if (e.target && e.target.dataset && e.target.dataset.page === 'map') {
+    setTimeout(initMap, 100);
+  }
 });
 </script>
 </body>

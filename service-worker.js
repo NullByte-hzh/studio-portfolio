@@ -1,9 +1,16 @@
-const CACHE_NAME = 'studio-v2';
+const CACHE_NAME = 'studio-v3';
 const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/icon-192.svg'
+];
+
+// 扩展缓存策略：缓存 CDN 资源
+const CDN_HOSTS = [
+  'unpkg.com',
+  'cdnjs.cloudflare.com',
+  'images.unsplash.com'
 ];
 
 // 安装时缓存核心资源
