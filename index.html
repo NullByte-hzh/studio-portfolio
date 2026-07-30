@@ -19,8 +19,13 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/svg+xml" href="icon-192.svg" />
   <link rel="apple-touch-icon" href="icon-192.svg" />
-  <!-- Preload hero images for smoother carousel -->
   <link rel="preload" as="image" href="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80">
+  <!-- Leaflet CSS for map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- EXIF JS for reading photo metadata -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js"></script>
   
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -205,12 +210,19 @@
     .lb-info { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); text-align: center; color: rgba(255,255,255,.6); }
     .lb-title { font-size: 16px; color: rgba(255,255,255,.9); margin-bottom: 6px; }
     .lb-meta { font-size: 11px; letter-spacing: .15em; }
+    .lb-exif { font-size: 10px; color: rgba(255,255,255,.5); margin-top: 8px; letter-spacing: .1em; line-height: 1.8; }
     .lb-counter { position: fixed; top: 28px; left: 28px; font-size: 11px; letter-spacing: .2em; color: rgba(255,255,255,.4); }
     .lb-thumbs { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
     .lb-thumb { width: 56px; height: 56px; overflow: hidden; opacity: .4; transition: opacity .25s; cursor: pointer; border: 1px solid rgba(255,255,255,.1); }
     .lb-thumb:hover, .lb-thumb.active { opacity: 1; border-color: rgba(255,255,255,.3); }
     .lb-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    @media (max-width: 768px) { .lb-nav, .lb-info, .lb-thumbs { display: none; } }
+    .lb-zoom-hint { position: fixed; top: 28px; right: 28px; font-size: 10px; letter-spacing: .15em; color: rgba(255,255,255,.5); }
+    .lb-fullscreen { position: fixed; top: 28px; right: 80px; width: 44px; height: 44px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); color: var(--white); font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all .3s; border-radius: 4px; }
+    .lb-fullscreen:hover { background: rgba(255,255,255,.15); }
+    .lb-slideshow { position: fixed; bottom: 70px; right: 28px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); color: var(--white); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all .3s; }
+    .lb-slideshow:hover { background: rgba(255,255,255,.15); }
+    .lb-slideshow.active { background: rgba(200,160,100,.5); border-color: rgba(200,160,100,.5); }
+    @media (max-width: 768px) { .lb-nav, .lb-info, .lb-thumbs, .lb-zoom-hint, .lb-fullscreen, .lb-slideshow { display: none; } }
 
     /* BOOKING PAGE */
     .booking-hero { padding: 140px 48px 60px; background: var(--bg-alt); }
@@ -276,6 +288,21 @@
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .toast.warn { background: #a06840; }
 
+    /* MAP PAGE */
+    .map-page { padding: 120px 48px 80px; }
+    .map-container { height: calc(100vh - 200px); min-height: 500px; width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    #photoMap { height: 100%; width: 100%; }
+    .map-legend { position: absolute; top: 140px; left: 60px; background: var(--white); padding: 16px 20px; border-radius: 6px; border: 1px solid var(--border); z-index: 1000; }
+    .map-legend h4 { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .map-legend p { font-size: 12px; color: var(--muted); margin: 0; }
+    @media (max-width: 768px) { .map-page { padding: 100px 24px 60px; } .map-container { height: calc(100vh - 160px); } .map-legend { top: 120px; left: 32px; right: 32px; } }
+
+    /* PANZOOM for infinite zoom */
+    .panzoom-container { position: absolute; inset: 0; background: rgba(0,0,0,.98); cursor: grab; }
+    .panzoom-container:active { cursor: grabbing; }
+    .panzoom-img { position: absolute; transform-origin: center; will-change: transform; }
+    .panzoom-close { position: fixed; top: 24px; right: 24px; width: 44px; height: 44px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); color: var(--white); border-radius: 4px; display: flex; align-items: center; justify-content: center; z-index: 3000; }
+
     /* REVEAL */
     .reveal { opacity: 0; transform: translateY(40px); transition: all .8s var(--ease); }
     .reveal.visible { opacity: 1; transform: translateY(0); }
@@ -293,6 +320,7 @@
   <ul class="nav-links" id="navLinks">
     <li><a href="#" class="active" data-page="home" onclick="showPage('home');return false;">首页</a></li>
     <li><a href="#" data-page="gallery" onclick="showPage('gallery');return false;">作品</a></li>
+    <li><a href="#" data-page="map" onclick="showPage('map');return false;">地图</a></li>
     <li><a href="#" data-page="booking" onclick="showPage('booking');return false;">预约</a></li>
   </ul>
   <div class="nav-cta">
@@ -474,6 +502,23 @@
   </div>
 </div>
 
+<!-- PAGE: MAP -->
+<div id="page-map" class="page">
+  <div class="gallery-hero">
+    <h1>拍摄地图</h1>
+    <p>点击标记查看该地点拍摄的作品</p>
+  </div>
+  <div class="map-page">
+    <div class="map-container">
+      <div id="photoMap"></div>
+      <div class="map-legend">
+        <h4>拍摄地点</h4>
+        <p>点击蓝色标记浏览作品</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- PAGE: BOOKING -->
 <div id="page-booking" class="page">
   <div class="booking-hero">
@@ -593,6 +638,7 @@
       <ul>
         <li><a href="#" onclick="showPage('home');return false;">首页</a></li>
         <li><a href="#" onclick="showPage('gallery');return false;">作品</a></li>
+        <li><a href="#" onclick="showPage('map');return false;">地图</a></li>
         <li><a href="#" onclick="showPage('booking');return false;">预约</a></li>
       </ul>
     </div>
@@ -622,6 +668,8 @@
 <div class="lightbox" id="lightbox">
   <div class="lb-counter" id="lbCounter">1 / 16</div>
   <button class="lb-close" onclick="closeLightbox()">✕</button>
+  <button class="lb-fullscreen" id="lbFullscreen" onclick="toggleFullscreen()" title="全屏浏览">⛶</button>
+  <button class="lb-slideshow" id="lbSlideshow" onclick="toggleSlideshow()" title="自动轮播">▶</button>
   <button class="lb-nav lb-prev" onclick="lbPrev()">←</button>
   <div class="lb-container">
     <img class="lb-img" id="lbImg" src="" alt="" />
@@ -631,7 +679,9 @@
   <div class="lb-info">
     <div class="lb-title" id="lbTitle"></div>
     <div class="lb-meta" id="lbMeta"></div>
+    <div class="lb-exif" id="lbExif"></div>
   </div>
+  <div class="lb-zoom-hint">双击 → 无极缩放细节</div>
 </div>
 
 <!-- TOAST -->
@@ -640,23 +690,62 @@
 <script>
 /* ===== DATA ===== */
 const galleryData = [
-  { cat: 'landscape', title: '暮色海岸', meta: '风光 · 深圳', src: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80' },
+  { cat: 'landscape', title: '暮色海岸', meta: '风光 · 深圳', lat: 22.5431, lng: 114.0579, src: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80' },
   { cat: 'portrait', title: '午后光影', meta: '人像 · 室内', src: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&q=80' },
-  { cat: 'street', title: '城市黄昏', meta: '街拍 · 香港', src: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80' },
+  { cat: 'street', title: '城市黄昏', meta: '街拍 · 香港', lat: 22.3193, lng: 114.1694, src: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80' },
   { cat: 'nature', title: '林间晨雾', meta: '自然 · 户外', src: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80' },
   { cat: 'portrait', title: '静水深流', meta: '人像 · 黑白', src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&q=80' },
-  { cat: 'landscape', title: '天际线', meta: '风光 · 城市', src: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80' },
-  { cat: 'street', title: '夜归', meta: '街拍 · 深圳', src: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=800&q=80' },
+  { cat: 'landscape', title: '天际线', meta: '风光 · 城市', lat: 22.5431, lng: 114.0579, src: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80' },
+  { cat: 'street', title: '夜归', meta: '街拍 · 深圳', lat: 22.5431, lng: 114.0579, src: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=800&q=80' },
   { cat: 'nature', title: '花开有时', meta: '自然 · 植物', src: 'https://images.unsplash.com/photo-1490750967868-88df56991419?w=800&q=80' },
-  { cat: 'landscape', title: '城市轮廓', meta: '风光 · 航拍', src: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&q=80' },
+  { cat: 'landscape', title: '城市轮廓', meta: '风光 · 航拍', lat: 22.5431, lng: 114.0579, src: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&q=80' },
   { cat: 'portrait', title: '目光', meta: '人像 · 近摄', src: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=800&q=80' },
   { cat: 'nature', title: '银河', meta: '自然 · 星空', src: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80' },
   { cat: 'street', title: '老巷深处', meta: '街拍 · 怀旧', src: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=800&q=80' },
   { cat: 'landscape', title: '山川', meta: '风光 · 户外', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80' },
-  { cat: 'portrait', title: '微笑', meta: '人像 · 日常', src: 'https://images.unsplash.com/photo-1529626455594-4ff080803349?w=800&q=80' },
-  { cat: 'nature', title: '海边礁石', meta: '自然 · 海景', src: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&q=80' },
+  { cat: 'portrait', title: '微笑', meta: '人像 · 日常', src: 'https://images.unsplash.com/photo-1529626455594-4ff080003349?w=800&q=80' },
+  { cat: 'nature', title: '海边礁石', meta: '自然 · 海景', lat: 22.5200, lng: 114.0300, src: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&q=80' },
   { cat: 'street', title: '雨中', meta: '街拍 · 情绪', src: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=800&q=80' }
 ];
+
+/* ===== EXIF READING ===== */
+function readExifData(imgElement, callback) {
+  EXIF.getData(imgElement, function() {
+    const allExif = EXIF.getAllTags(this);
+    const exif = {};
+    if (allExif.Make) exif.make = allExif.Make.replace(/\0/g, '').trim();
+    if (allExif.Model) exif.model = allExif.Model.replace(/\0/g, '').trim();
+    if (allExif.FocalLength) exif.focalLength = Math.round(allExif.FocalLength * 100) / 100;
+    if (allExif.FNumber) exif.fNumber = allExif.FNumber;
+    if (allExif.ExposureTime) {
+      if (allExif.ExposureTime < 1) {
+        exif.exposureTime = `1/${Math.round(1/allExif.ExposureTime)}s`;
+      } else {
+        exif.exposureTime = `${Math.round(allExif.ExposureTime * 10) / 10}s`;
+      }
+    }
+    if (allExif.ISO) exif.iso = allExif.ISO;
+    
+    // GPS coordinates if available
+    if (allExif.GPSLatitude && allExif.GPSLongitude) {
+      const lat = convertGps(allExif.GPSLatitude, allExif.GPSLatitudeRef);
+      const lng = convertGps(allExif.GPSLongitude, allExif.GPSLongitudeRef);
+      exif.lat = lat;
+      exif.lng = lng;
+    }
+    
+    callback(exif);
+  });
+}
+
+function convertGps(coords, ref) {
+  let deg = coords[0].numerator / coords[0].denominator;
+  let min = coords[1].numerator / coords[1].denominator;
+  let sec = coords[2].numerator / coords[2].denominator;
+  let decimal = deg + min/60 + sec/(60*60);
+  if (ref === 'S' || ref === 'W') decimal = -decimal;
+  return decimal;
+}
 
 /* ===== INIT GALLERY ===== */
 function initGallery() {
@@ -908,6 +997,35 @@ function openLightbox(idx) {
   document.getElementById('lbImg').src = item.src || item.dataUrl;
   document.getElementById('lbTitle').textContent = item.title;
   document.getElementById('lbMeta').textContent = item.meta;
+  
+  // Clear previous EXIF
+  document.getElementById('lbExif').textContent = '';
+  
+  // Try to read EXIF if it's an original image (not uploaded)
+  if (!item.uploaded) {
+    const tempImg = new Image();
+    tempImg.crossOrigin = "Anonymous";
+    tempImg.onload = function() {
+      readExifData(tempImg, function(exif) {
+        let exifText = '';
+        if (exif.make && exif.model) {
+          exifText += `${exif.make} ${exif.model}`;
+        }
+        const parts = [];
+        if (exif.focalLength) parts.push(`${exif.focalLength}mm`);
+        if (exif.fNumber) parts.push(`f/${exif.fNumber}`);
+        if (exif.exposureTime) parts.push(exif.exposureTime);
+        if (exif.iso) parts.push(`ISO ${exif.iso}`);
+        if (parts.length > 0) {
+          if (exifText) exifText += ' · ';
+          exifText += parts.join(' · ');
+        }
+        document.getElementById('lbExif').textContent = exifText;
+      });
+    };
+    tempImg.src = item.src;
+  }
+  
   lbIdx = idx;
   updateLbCounter(items.length);
   renderThumbs(items);
@@ -915,9 +1033,190 @@ function openLightbox(idx) {
   document.body.style.overflow = 'hidden';
 }
 
+/* ===== ZOOM/PAN ON DOUBLE CLICK ===== */
+document.getElementById('lbImg').addEventListener('dblclick', function(e) {
+  openPanZoom(this.src);
+});
+
+let panZoomActive = false;
+function openPanZoom(src) {
+  const container = document.createElement('div');
+  container.className = 'panzoom-container';
+  container.id = 'panZoomContainer';
+  
+  const img = document.createElement('img');
+  img.className = 'panzoom-img';
+  img.src = src;
+  img.style.transform = 'translate(-50%, -50%) scale(1)';
+  img.style.left = '50%';
+  img.style.top = '50%';
+  
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'panzoom-close';
+  closeBtn.innerHTML = '✕';
+  closeBtn.onclick = closePanZoom;
+  
+  container.appendChild(img);
+  container.appendChild(closeBtn);
+  document.body.appendChild(container);
+  
+  // Simple drag and zoom
+  let isDragging = false;
+  let startX, startY, startLeft, startTop, currentScale = 1;
+  let currentX = 0, currentY = 0;
+  
+  container.addEventListener('mousedown', function(e) {
+    if (e.target === container || e.target === img) {
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = currentX;
+      startTop = currentY;
+    }
+  });
+  
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging || !panZoomActive) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    currentX = startLeft + dx;
+    currentY = startTop + dy;
+    updatePanZoomTransform(img, currentX, currentY, currentScale);
+  });
+  
+  document.addEventListener('mouseup', function() {
+    isDragging = false;
+  });
+  
+  container.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    currentScale = Math.max(1, Math.min(currentScale + delta, 5));
+    updatePanZoomTransform(img, currentX, currentY, currentScale);
+  });
+  
+  panZoomActive = true;
+}
+
+function updatePanZoomTransform(img, x, y, scale) {
+  img.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${scale})`;
+}
+
+function closePanZoom() {
+  const container = document.getElementById('panZoomContainer');
+  if (container) container.remove();
+  panZoomActive = false;
+}
+
+document.addEventListener('keydown', function(e) {
+  if (panZoomActive && e.key === 'Escape') {
+    closePanZoom();
+  }
+});
+
+function closePanZoom() {
+  const container = document.getElementById('panZoomContainer');
+  if (container) container.remove();
+  panZoomActive = false;
+}
+
+/* ===== FULLSCREEN ===== */
+let slideshowTimer = null;
+let isSlideshow = false;
+
+function toggleFullscreen() {
+  const lb = document.getElementById('lightbox');
+  if (!document.fullscreenElement) {
+    lb.requestFullscreen().catch(err => {
+      showToast('全屏切换失败', true);
+    });
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+function toggleSlideshow() {
+  const btn = document.getElementById('lbSlideshow');
+  isSlideshow = !isSlideshow;
+  btn.classList.toggle('active', isSlideshow);
+  
+  if (isSlideshow) {
+    slideshowTimer = setInterval(() => {
+      lbNext();
+    }, 4000);
+  } else {
+    clearInterval(slideshowTimer);
+    slideshowTimer = null;
+  }
+}
+
+/* ===== MAP ===== */
+let map = null;
+function initMap() {
+  if (!document.getElementById('photoMap')) return;
+  
+  // Initialize map centered on China
+  map = L.map('photoMap').setView([28, 110], 4);
+  
+  // Use OpenStreetMap (free, no API key needed)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+  
+  // Add markers for photos that have coordinates
+  const hasCoordinates = galleryData.filter(item => item.lat && item.lng);
+  
+  if (hasCoordinates.length === 0) {
+    return;
+  }
+  
+  // Group markers by approximate location
+  const markers = {};
+  hasCoordinates.forEach(item => {
+    const key = `${item.lat.toFixed(3)},${item.lng.toFixed(3)}`;
+    if (!markers[key]) {
+      markers[key] = [];
+    }
+    markers[key].push(item);
+  });
+  
+  // Add markers to map
+  Object.keys(markers).forEach(key => {
+    const [lat, lng] = key.split(',').map(parseFloat);
+    const items = markers[key];
+    const marker = L.marker([lat, lng]).addTo(map);
+    let popupContent = `<div style="font-weight:bold; margin-bottom:4px;">${items.length} 张作品</div><ul style="margin:4px 0 0 0; padding-left:16px;">`;
+    items.forEach(item => {
+      popupContent += `<li><a href="#" onclick="openMapPhoto(${galleryData.indexOf(item)}); return false;">${item.title}</a></li>`;
+    });
+    popupContent += '</ul>';
+    marker.bindPopup(popupContent);
+  });
+  
+  // If we have markers, fit bounds
+  if (hasCoordinates.length > 0) {
+    const group = new L.featureGroup(Object.values(markers).map((items, i) => 
+      L.marker([items[0].lat, items[0].lng])
+    ));
+    map.fitBounds(group.getBounds());
+  }
+}
+
+function openMapPhoto(idx) {
+  showPage('gallery');
+  setTimeout(() => openLightbox(idx), 300);
+}
+
 function closeLightbox() {
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
+  if (slideshowTimer) {
+    clearInterval(slideshowTimer);
+    slideshowTimer = null;
+  }
+  isSlideshow = false;
+  const btn = document.getElementById('lbSlideshow');
+  if (btn) btn.classList.remove('active');
 }
 
 function lbPrev() {
@@ -1066,6 +1365,10 @@ initGallery();
 loadUploads();
 refreshReveal();
 initDarkMode();
+// Initialize map when map page becomes visible
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(initMap, 100);
+});
 </script>
 </body>
 </html>
