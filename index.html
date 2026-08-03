@@ -21,7 +21,6 @@
   <link rel="apple-touch-icon" href="icon-192.svg" />
   <link rel="preload" as="image" href="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80">
   <!-- EXIF JS for reading photo metadata -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js"></script>
   
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -30,7 +29,7 @@
       --dark: #1a1a1a; --darker: #0a0a0a;
       --text: #2c2c2c; --muted: #7a7a75;
       --accent: #9a9a90; --accent-warm: #c4a882;
-      --border: #ddd9d4; --white: #ffffff;
+      --border: #ddd9d4; --white: #ffffff; --scrim: rgba(250,249,247,.95);
       --gap: 20px; --gap-lg: 32px; --section: 100px;
       --ease: cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -39,7 +38,7 @@
       --dark: #e8e8e8; --darker: #f5f5f5;
       --text: #e5e5e5; --muted: #a0a09a;
       --accent: #a8a89d; --accent-warm: #d4b892;
-      --border: #333333; --white: #1a1a1a;
+      --border: #333333; --white: #1a1a1a; --scrim: rgba(15,15,15,.95);
     }
     html { scroll-behavior: smooth; font-size: 16px; -webkit-font-smoothing: antialiased; transition: background-color 0.3s var(--ease); }
     body { background: var(--bg); color: var(--text); font-family: 'Helvetica Neue', -apple-system, sans-serif; line-height: 1.6; overflow-x: hidden; transition: background-color 0.3s var(--ease), color 0.3s var(--ease); }
@@ -53,7 +52,7 @@
 
     /* NAV */
     .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 0 48px; height: 72px; display: flex; align-items: center; justify-content: space-between; transition: all .4s var(--ease); }
-    .nav.scrolled { background: rgba(250,249,247,.95); backdrop-filter: blur(20px); box-shadow: 0 1px 0 var(--border); height: 64px; }
+    .nav.scrolled { background: var(--scrim); backdrop-filter: blur(20px); box-shadow: 0 1px 0 var(--border); height: 64px; }
     .nav-logo { font-size: 13px; font-weight: 500; letter-spacing: .35em; color: var(--dark); transition: opacity .3s; }
     .nav-logo:hover { opacity: .7; }
     .nav-links { display: flex; gap: 48px; list-style: none; }
@@ -159,7 +158,7 @@
     .gallery-hero { padding: 140px 48px 60px; background: var(--bg); }
     .gallery-hero h1 { font-family: Georgia, serif; font-size: clamp(32px, 5vw, 48px); font-weight: 400; margin-bottom: 16px; }
     .gallery-hero p { font-size: 14px; color: var(--muted); letter-spacing: .05em; }
-    .gallery-toolbar { position: sticky; top: 64px; z-index: 100; padding: 20px 48px; background: rgba(250,249,247,.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .gallery-toolbar { position: sticky; top: 64px; z-index: 100; padding: 20px 48px; background: var(--scrim); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
     .gallery-filters { display: flex; gap: 6px; flex-wrap: wrap; }
     .filter-btn { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; padding: 8px 16px; background: transparent; border: 1px solid transparent; color: var(--muted); transition: all .3s var(--ease); }
     .filter-btn:hover { color: var(--dark); }
@@ -285,7 +284,7 @@
     .toast.warn { background: #a06840; }
 
     /* MAP PAGE */
-    .map-page { padding: 120px 48px 80px; }
+    .map-page { position: relative; padding: 120px 48px 80px; }
     .map-container { height: calc(100vh - 200px); min-height: 500px; width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
     #photoMap { height: 100%; width: 100%; }
     .map-legend { position: absolute; top: 140px; left: 60px; background: var(--white); padding: 16px 20px; border-radius: 6px; border: 1px solid var(--border); z-index: 1000; }
@@ -468,12 +467,12 @@
   
   <div class="gallery-toolbar">
     <div class="gallery-filters">
-      <button class="filter-btn active" onclick="filterGallery(this, 'all')">全部</button>
-      <button class="filter-btn" onclick="filterGallery(this, 'portrait')">人像</button>
-      <button class="filter-btn" onclick="filterGallery(this, 'landscape')">风光</button>
-      <button class="filter-btn" onclick="filterGallery(this, 'street')">街拍</button>
-      <button class="filter-btn" onclick="filterGallery(this, 'nature')">自然</button>
-      <button class="filter-btn" id="uploadedFilterBtn" style="display:none" onclick="filterGallery(this, 'uploaded')">我的上传</button>
+      <button class="filter-btn active" data-cat="all" onclick="filterGallery(this, 'all')">全部</button>
+      <button class="filter-btn" data-cat="portrait" onclick="filterGallery(this, 'portrait')">人像</button>
+      <button class="filter-btn" data-cat="landscape" onclick="filterGallery(this, 'landscape')">风光</button>
+      <button class="filter-btn" data-cat="street" onclick="filterGallery(this, 'street')">街拍</button>
+      <button class="filter-btn" data-cat="nature" onclick="filterGallery(this, 'nature')">自然</button>
+      <button class="filter-btn" id="uploadedFilterBtn" data-cat="uploaded" style="display:none" onclick="filterGallery(this, 'uploaded')">我的上传</button>
     </div>
     <div class="gallery-actions">
       <button class="upload-btn" onclick="document.getElementById('uploadInput').click()">
@@ -683,6 +682,7 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js"></script>
 <script>
 /* ===== DATA ===== */
 const galleryData = [
@@ -743,31 +743,15 @@ function convertGps(coords, ref) {
   return decimal;
 }
 
-/* ===== INIT GALLERY ===== */
-function initGallery() {
-  const grid = document.getElementById('galleryGrid');
-  galleryData.forEach((item, i) => {
-    const el = document.createElement('div');
-    el.className = 'masonry-item';
-    el.dataset.cat = item.cat;
-    el.dataset.title = item.title;
-    el.dataset.meta = item.meta;
-    el.onclick = () => openLightbox(i);
-    el.innerHTML = `
-      <img src="${item.src}" alt="${item.title}" loading="lazy" />
-      <div class="masonry-overlay">
-        <h3 class="masonry-title">${item.title}</h3>
-        <p class="masonry-meta">${item.meta}</p>
-      </div>
-    `;
-    grid.appendChild(el);
-  });
-}
-
 /* ===== NAV SCROLL ===== */
+let navTicking = false;
 window.addEventListener('scroll', () => {
-  const nav = document.getElementById('nav');
-  nav.classList.toggle('scrolled', window.scrollY > 50);
+  if (navTicking) return;
+  navTicking = true;
+  requestAnimationFrame(() => {
+    document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
+    navTicking = false;
+  });
 });
 
 /* ===== PAGE ROUTING ===== */
@@ -822,75 +806,49 @@ function filterGallery(btn, cat) {
 
 function setFilter(cat) {
   setTimeout(() => {
-    const btns = document.querySelectorAll('.filter-btn');
-    let target = null;
-    btns.forEach(b => {
-      const onclick = b.getAttribute('onclick') || '';
-      if (onclick.includes("'" + cat + "'")) target = b;
-    });
-    if (!target) target = btns[0];
+    const target = document.querySelector(`.filter-btn[data-cat="${cat}"]`) || document.querySelector('.filter-btn');
     filterGallery(target, cat);
   }, 100);
 }
 
 function renderGallery() {
   const grid = document.getElementById('galleryGrid');
-  grid.innerHTML = '';
-  
-  let visibleCount = 0;
-  
-  // Original items
-  galleryData.forEach((item, i) => {
-    if (currentFilter === 'all' || item.cat === currentFilter || currentFilter === 'uploaded') {
-      visibleCount++;
-      const el = document.createElement('div');
-      el.className = 'masonry-item';
-      el.dataset.cat = item.cat;
-      el.dataset.title = item.title;
-      el.dataset.meta = item.meta;
-      const idx = i;
-      el.onclick = () => openLightbox(idx);
-      el.innerHTML = `
-        <img src="${item.src}" alt="${item.title}" loading="lazy" />
-        <div class="masonry-overlay">
-          <h3 class="masonry-title">${item.title}</h3>
-          <p class="masonry-meta">${item.meta}</p>
-        </div>
-      `;
-      grid.appendChild(el);
-    }
-  });
-  
-  // Uploaded items
-  if (currentFilter === 'all' || currentFilter === 'uploaded') {
-    uploadedPhotos.forEach((photo, i) => {
-      visibleCount++;
-      const el = document.createElement('div');
-      el.className = 'masonry-item is-uploaded';
-      el.dataset.cat = 'uploaded';
-      el.dataset.title = photo.name || '我的照片';
-      el.dataset.meta = '上传于 ' + photo.date;
-      el.dataset.uploadId = photo.id;
-      const idx = galleryData.length + i;
-      el.onclick = function(e) {
-        if (e.target.classList.contains('remove-btn')) return;
-        openLightbox(idx);
-      };
-      el.innerHTML = `
-        <button class="remove-btn" onclick="removeUpload('${photo.id}', event)">✕</button>
-        <img src="${photo.dataUrl}" alt="${photo.name || '我的照片'}" loading="lazy" />
-        <div class="masonry-overlay">
-          <h3 class="masonry-title">${photo.name || '我的照片'}</h3>
-          <p class="masonry-meta">上传于 ${photo.date}</p>
-        </div>
-      `;
-      grid.appendChild(el);
-    });
-  }
-  
-  // Check empty
   const empty = document.getElementById('galleryEmpty');
-  empty.classList.toggle('visible', visibleCount === 0);
+  grid.innerHTML = '';
+  const items = getAllItems();
+
+  items.forEach((item, i) => {
+    const el = document.createElement('div');
+    el.className = 'masonry-item' + (item.uploaded ? ' is-uploaded' : '');
+    el.dataset.cat = item.cat;
+    el.dataset.title = item.title;
+    el.dataset.meta = item.meta;
+    el.onclick = () => openLightbox(i);
+
+    const title = escapeHtml(item.title);
+    const meta = escapeHtml(item.meta);
+    const removeBtn = item.uploaded
+      ? `<button class="remove-btn" onclick="removeUpload('${item.id}', event)">✕</button>`
+      : '';
+
+    el.innerHTML = `
+      ${removeBtn}
+      <img src="${item.src}" alt="${title}" loading="lazy" />
+      <div class="masonry-overlay">
+        <h3 class="masonry-title">${title}</h3>
+        <p class="masonry-meta">${meta}</p>
+      </div>
+    `;
+    grid.appendChild(el);
+  });
+
+  empty.classList.toggle('visible', items.length === 0);
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
 }
 
 /* ===== UPLOAD SYSTEM ===== */
@@ -942,7 +900,7 @@ document.getElementById('uploadInput').addEventListener('change', function(e) {
   files.forEach(file => {
     if (!file.type.startsWith('image/')) return;
     if (file.size > MAX_SIZE) {
-      showToast(`"${file.name}" 超过 10MB 限制`, true);
+      showToast(`"${file.name}" 超过 ${MAX_SIZE / (1024 * 1024)}MB 限制`, true);
       return;
     }
     const reader = new FileReader();
@@ -977,7 +935,7 @@ function getAllItems() {
   let items = [...galleryData];
   if (currentFilter === 'all' || currentFilter === 'uploaded') {
     uploadedPhotos.forEach(p => {
-      items.push({ title: p.name || '我的照片', meta: '上传于 ' + p.date, src: p.dataUrl, uploaded: true, id: p.id });
+      items.push({ cat: 'uploaded', title: p.name || '我的照片', meta: '上传于 ' + p.date, src: p.dataUrl, uploaded: true, id: p.id });
     });
   }
   if (currentFilter !== 'all' && currentFilter !== 'uploaded') {
@@ -998,7 +956,7 @@ function openLightbox(idx) {
   document.getElementById('lbExif').textContent = '';
   
   // Try to read EXIF if it's an original image (not uploaded)
-  if (!item.uploaded) {
+  if (!item.uploaded && window.EXIF) {
     const tempImg = new Image();
     tempImg.crossOrigin = "Anonymous";
     tempImg.onload = function() {
@@ -1110,12 +1068,6 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-function closePanZoom() {
-  const container = document.getElementById('panZoomContainer');
-  if (container) container.remove();
-  panZoomActive = false;
-}
-
 /* ===== FULLSCREEN ===== */
 let slideshowTimer = null;
 let isSlideshow = false;
@@ -1173,11 +1125,14 @@ function loadLeaflet(callback) {
     leafletLoaded = true;
     callback();
   };
+  script.onerror = function() {
+    showToast('地图加载失败，请稍后重试', true);
+  };
   document.head.appendChild(script);
 }
 
 function initMap() {
-  if (!document.getElementById('photoMap')) return;
+  if (map || !document.getElementById('photoMap')) return;
   
   // Lazy load Leaflet
   loadLeaflet(function() {
@@ -1269,7 +1224,7 @@ function renderThumbs(items) {
   others.forEach((item, i) => {
     const thumb = document.createElement('div');
     thumb.className = 'lb-thumb';
-    const idx = getAllItems().indexOf(item);
+    const idx = items.indexOf(item);
     thumb.innerHTML = `<img src="${item.src || item.dataUrl}" alt="" />`;
     thumb.onclick = () => openLightbox(idx);
     container.appendChild(thumb);
@@ -1346,17 +1301,20 @@ function showToast(msg, warn) {
 }
 
 /* ===== SCROLL REVEAL ===== */
+let revealObserver = null;
 function refreshReveal() {
-  const els = document.querySelectorAll('.reveal');
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        obs.unobserve(entry.target);
-      }
-    });
-  }, { threshold: .15 });
-  els.forEach(el => obs.observe(el));
+  const els = document.querySelectorAll('.reveal:not(.visible)');
+  if (!revealObserver) {
+    revealObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: .15 });
+  }
+  els.forEach(el => revealObserver.observe(el));
 }
 
 /* ===== DARK MODE ===== */
@@ -1388,14 +1346,20 @@ if ('serviceWorker' in navigator) {
 }
 
 /* ===== INIT ===== */
-initGallery();
 loadUploads();
+renderGallery();
 refreshReveal();
 initDarkMode();
 // Initialize map only when map page becomes visible
 document.addEventListener('click', function(e) {
   if (e.target && e.target.dataset && e.target.dataset.page === 'map') {
-    setTimeout(initMap, 100);
+    setTimeout(() => {
+      if (map) {
+        map.invalidateSize();
+      } else {
+        initMap();
+      }
+    }, 100);
   }
 });
 </script>
