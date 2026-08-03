@@ -1,8 +1,9 @@
-{
+﻿{
   "name": "STUDIO 摄影作品集",
   "short_name": "STUDIO",
   "description": "独立摄影师作品展示，专注于人像、风光与街头摄影",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#faf9f7",
   "theme_color": "#1a1a1a",
@@ -12,7 +13,7 @@
       "src": "icon-192.svg",
       "sizes": "192x192 128x128 64x64 32x32 24x24 16x16",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "categories": ["photography", "lifestyle"],
