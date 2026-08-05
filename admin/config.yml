@@ -1,0 +1,32 @@
+backend:
+  name: github
+  repo: NullByte-hzh/studio-portfolio
+  branch: main
+  base_url: https://api.github.com
+  auth_endpoint: https://github.com/login/oauth/authorize
+
+media:
+  output_path: 'uploads/'
+  public_folder: '/uploads'
+
+collections:
+  - name: 'gallery'
+    label: '作品'
+    folder: '_gallery'
+    create: true
+    slug: '{{title}}'
+    fields:
+      - {label: '标题', name: 'title', widget: 'string'}
+      - {label: '分类', name: 'cat', widget: 'select', options: ['portrait', 'landscape', 'street', 'nature'], default: 'portrait'}
+      - {label: '描述', name: 'meta', widget: 'string'}
+      - {label: '纬度', name: 'lat', widget: 'number', required: false}
+      - {label: '经度', name: 'lng', widget: 'number', required: false}
+      - {label: '图片链接', name: 'src', widget: 'string'}
+  - name: 'pages'
+    label: '页面'
+    files:
+      - label: '首页'
+        file: 'index.md'
+        fields:
+          - {label: '网站标题', name: 'title', widget: 'string'}
+          - {label: '网站描述', name: 'description', widget: 'text'}

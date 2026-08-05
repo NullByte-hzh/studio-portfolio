@@ -298,6 +298,12 @@
     .panzoom-img { position: absolute; transform-origin: center; will-change: transform; }
     .panzoom-close { position: fixed; top: 24px; right: 24px; width: 44px; height: 44px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); color: var(--white); border-radius: 4px; display: flex; align-items: center; justify-content: center; z-index: 3000; }
 
+/* Giscus dark mode adaptation */
+html.dark #giscus-container {
+  background: var(--bg-alt);
+}
+
+
     /* REVEAL */
     .reveal { opacity: 0; transform: translateY(40px); transition: all .8s var(--ease); }
     .reveal.visible { opacity: 1; transform: translateY(0); }
@@ -512,6 +518,33 @@
       </div>
     </div>
   </div>
+
+  <!-- Giscus Comments -->
+  <div class="gallery-wrap">
+    <div class="section">
+      <div class="section-header reveal">
+        <h2 class="section-title">留言讨论<span>欢迎交流提问</span></h2>
+      </div>
+      <div id="giscus-container" style="margin-top: 40px; padding: 24px 0; background: var(--bg-alt); border-radius: 8px;">
+        <script src="https://giscus.app/client.js"
+              data-repo="[REPLACE WITH YOUR REPO]"
+              data-repo-id="[REPLACE]"
+              data-category="Comments"
+              data-category-id="[REPLACE]"
+              data-mapping="pathname"
+              data-strict="0"
+              data-reactions-enabled="1"
+              data-emit-metadata="0"
+              data-input-position="bottom"
+              data-theme="preferred_color_scheme"
+              data-lang="zh-CN"
+              data-loading="lazy"
+              crossorigin="anonymous"
+              async>
+        </script>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- PAGE: BOOKING -->
@@ -635,6 +668,7 @@
         <li><a href="#" onclick="showPage('gallery');return false;">作品</a></li>
         <li><a href="#" onclick="showPage('map');return false;">地图</a></li>
         <li><a href="#" onclick="showPage('booking');return false;">预约</a></li>
+        <li><a href="/admin/" target="_blank">管理</a></li>
       </ul>
     </div>
     <div class="footer-col">
