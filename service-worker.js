@@ -1,16 +1,14 @@
-﻿const CACHE_NAME = 'studio-v4';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.svg'
-];
+const CACHE_NAME = 'studio-v5';
+// 资源清单；在 install 事件内基于 registration.scope 计算绝对地址，
+// 兼容根目录与 GitHub Pages 子路径部署（顶层访问 self.registration 会导致 worker 失效）
+const ASSET_PATHS = ['.', 'index.html', 'manifest.json', 'icon-192.svg'];
 
 // 安装时逐个缓存核心资源，单个失败不会中断安装
 self.addEventListener('install', event => {
+  const assets = ASSET_PATHS.map(p => new URL(p, self.registration.scope).href);
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => Promise.allSettled(ASSETS.map(url => cache.add(url))))
+      .then(cache => Promise.allSettled(assets.map(url => cache.add(url))))
       .then(() => self.skipWaiting())
   );
 });
@@ -62,7 +60,7 @@ async function networkFirst(request, isNavigate) {
     const cached = await caches.match(request);
     if (cached) return cached;
     if (isNavigate) {
-      const shell = await caches.match('/index.html');
+      const shell = await caches.match(new URL('index.html', self.registration.scope).href);
       if (shell) return shell;
     }
     return new Response('', { status: 504, statusText: 'Offline' });

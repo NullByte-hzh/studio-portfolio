@@ -5,9 +5,8 @@ backend:
   base_url: https://api.github.com
   auth_endpoint: https://github.com/login/oauth/authorize
 
-media:
-  output_path: 'uploads/'
-  public_folder: '/uploads'
+media_folder: 'uploads'
+public_folder: '/uploads'
 
 collections:
   - name: 'gallery'
@@ -21,11 +20,12 @@ collections:
       - {label: '描述', name: 'meta', widget: 'string'}
       - {label: '纬度', name: 'lat', widget: 'number', required: false}
       - {label: '经度', name: 'lng', widget: 'number', required: false}
-      - {label: '图片链接', name: 'src', widget: 'string'}
+      - {label: '图片', name: 'src', widget: 'image'}
   - name: 'pages'
     label: '页面'
     files:
-      - label: '首页'
+      - name: 'home'
+        label: '首页'
         file: 'index.md'
         fields:
           - {label: '网站标题', name: 'title', widget: 'string'}
