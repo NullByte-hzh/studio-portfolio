@@ -138,6 +138,7 @@
     .cat-card:hover .cat-card-content { opacity: 1; }
     .cat-card-label { color: var(--white); font-size: 20px; font-weight: 400; letter-spacing: .05em; margin-bottom: 8px; }
     .cat-card-count { color: rgba(255,255,255,.7); font-size: 11px; letter-spacing: .15em; }
+    .cat-card:focus-visible { outline: 2px solid var(--accent-warm); outline-offset: 3px; }
     @media (max-width: 900px) { .cat-grid { grid-template-columns: 1fr; gap: 24px; } .cat-card-content { opacity: 1; } }
 
     /* ABOUT */
@@ -401,7 +402,7 @@ html.dark #giscus-container {
     </div>
     
     <div class="cat-grid">
-      <div class="cat-card reveal reveal-d1" onclick="showPage('gallery');setTimeout(()=>setFilter('portrait'),100)">
+      <div class="cat-card reveal reveal-d1" role="button" tabindex="0" onclick="showPage('gallery');setTimeout(()=>setFilter('portrait'),100)">
         <div class="cat-card-img">
           <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&q=80" alt="人像摄影" />
         </div>
@@ -410,7 +411,7 @@ html.dark #giscus-container {
           <p class="cat-card-count">38 张作品</p>
         </div>
       </div>
-      <div class="cat-card reveal reveal-d2" onclick="showPage('gallery');setTimeout(()=>setFilter('landscape'),100)">
+      <div class="cat-card reveal reveal-d2" role="button" tabindex="0" onclick="showPage('gallery');setTimeout(()=>setFilter('landscape'),100)">
         <div class="cat-card-img">
           <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80" alt="风光摄影" />
         </div>
@@ -419,7 +420,7 @@ html.dark #giscus-container {
           <p class="cat-card-count">45 张作品</p>
         </div>
       </div>
-      <div class="cat-card reveal reveal-d3" onclick="showPage('gallery');setTimeout(()=>setFilter('street'),100)">
+      <div class="cat-card reveal reveal-d3" role="button" tabindex="0" onclick="showPage('gallery');setTimeout(()=>setFilter('street'),100)">
         <div class="cat-card-img">
           <img src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80" alt="街头摄影" />
         </div>
@@ -971,6 +972,7 @@ document.getElementById('uploadInput').addEventListener('change', function(e) {
 
 /* ===== LIGHTBOX ===== */
 let lbIdx = 0;
+let lbReturnFocus = null;
 
 function getAllItems() {
   if (currentFilter === 'uploaded') {
@@ -1029,8 +1031,10 @@ function openLightbox(idx) {
   lbIdx = idx;
   updateLbCounter(items.length);
   renderThumbs(items);
+  lbReturnFocus = document.activeElement;
   document.getElementById('lightbox').classList.add('open');
   document.body.style.overflow = 'hidden';
+  setTimeout(() => { const f = document.getElementById('lightbox').querySelector('button'); if (f) f.focus(); }, 60);
 }
 
 /* ===== ZOOM/PAN ON DOUBLE CLICK ===== */
@@ -1278,6 +1282,7 @@ function closeLightbox() {
   isSlideshow = false;
   const btn = document.getElementById('lbSlideshow');
   if (btn) btn.classList.remove('active');
+  if (lbReturnFocus) { lbReturnFocus.focus(); lbReturnFocus = null; }
 }
 
 function lbPrev() {
@@ -1314,10 +1319,25 @@ document.getElementById('lightbox').addEventListener('click', e => {
   if (e.target.id === 'lightbox' || e.target.classList.contains('lb-container')) closeLightbox();
 });
 document.addEventListener('keydown', e => {
-  if (!document.getElementById('lightbox').classList.contains('open')) return;
-  if (e.key === 'Escape') closeLightbox();
-  if (e.key === 'ArrowLeft') lbPrev();
-  if (e.key === 'ArrowRight') lbNext();
+  const lb = document.getElementById('lightbox');
+  if (!lb.classList.contains('open')) return;
+  if (e.key === 'Escape') { closeLightbox(); return; }
+  if (e.key === 'ArrowLeft') { lbPrev(); return; }
+  if (e.key === 'ArrowRight') { lbNext(); return; }
+  if (e.key === 'Tab') {
+    const list = Array.from(lb.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')).filter(el => el.offsetParent !== null);
+    if (list.length < 2) return;
+    const first = list[0], last = list[list.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+/* [role=button] 键盘可达：Enter/Space 触发 click */
+document.addEventListener('keydown', function(e) {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role="button"]')) {
+    e.preventDefault();
+    e.target.click();
+  }
 });
 
 /* ===== BOOKING ===== */
