@@ -346,16 +346,16 @@ html.dark #giscus-container {
   <section class="hero">
     <div class="hero-bg">
       <div class="hero-slide active">
-        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80" alt="" />
+        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80" alt="" srcset="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=640&q=70 640w, https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=75 1200w, https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80 1920w" sizes="100vw" />
       </div>
       <div class="hero-slide">
-        <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80" alt="" />
+        <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80" alt="" srcset="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=640&q=70 640w, https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&q=75 1200w, https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80 1920w" sizes="100vw" />
       </div>
       <div class="hero-slide">
-        <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&q=80" alt="" />
+        <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&q=80" alt="" srcset="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=640&q=70 640w, https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&q=75 1200w, https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&q=80 1920w" sizes="100vw" />
       </div>
       <div class="hero-slide">
-        <img src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1920&q=80" alt="" />
+        <img src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1920&q=80" alt="" srcset="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=640&q=70 640w, https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1200&q=75 1200w, https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1920&q=80 1920w" sizes="100vw" />
       </div>
       <div class="hero-overlay"></div>
     </div>
@@ -826,6 +826,13 @@ function resetAuto() {
 }
 
 resetAuto();
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
+    clearInterval(autoTimer);
+  } else {
+    resetAuto();
+  }
+});
 
 /* ===== GALLERY FILTER ===== */
 let currentFilter = 'all';
@@ -937,7 +944,8 @@ document.getElementById('uploadInput').addEventListener('change', function(e) {
   const files = Array.from(e.target.files);
   if (!files.length) return;
   
-  let added = 0;
+  const valid = files.filter(f => f.type.startsWith('image/') && f.size <= MAX_SIZE);
+  let done = 0;
   files.forEach(file => {
     if (!file.type.startsWith('image/')) return;
     if (file.size > MAX_SIZE) {
@@ -954,14 +962,14 @@ document.getElementById('uploadInput').addEventListener('change', function(e) {
       });
       saveUploads();
       updateUploadCount();
-      added++;
-      if (added > 0) {
-        showToast(`已上传 ${added} 张照片`);
-      }
-      if (added === 1 && uploadedPhotos.length === 1) {
-        setTimeout(() => filterGallery(null, 'uploaded'), 100);
-      }
       renderGallery();
+      done++;
+      if (done === valid.length) {
+        showToast(`已上传 ${done} 张照片`);
+        if (uploadedPhotos.length === done) {
+          setTimeout(() => filterGallery(null, 'uploaded'), 100);
+        }
+      }
     };
     reader.readAsDataURL(file);
   });
@@ -1264,6 +1272,8 @@ function initMap() {
 }
 
 function openMapPhoto(idx) {
+  const allBtn = document.querySelector('.filter-btn[data-cat="all"]');
+  filterGallery(allBtn, 'all');
   showPage('gallery');
   setTimeout(() => openLightbox(idx), 300);
 }
@@ -1510,6 +1520,14 @@ document.addEventListener('click', function(e) {
         initMap();
       }
     }, 100);
+  }
+});
+
+/* 移动端菜单：点击导航外部关闭 */
+document.addEventListener('click', function(e) {
+  const nav = document.getElementById('nav');
+  if (nav && !nav.contains(e.target)) {
+    document.getElementById('navLinks').classList.remove('open');
   }
 });
 </script>
