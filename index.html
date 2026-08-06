@@ -56,7 +56,7 @@
     .nav-logo { font-size: 13px; font-weight: 500; letter-spacing: .35em; color: var(--dark); transition: opacity .3s; }
     .nav-logo:hover { opacity: .7; }
     .nav-links { display: flex; gap: 48px; list-style: none; }
-    .nav-links a { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); position: relative; padding: 8px 0; transition: color .3s; }
+    .nav-links a { font-size: 12px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); position: relative; padding: 8px 0; transition: color .3s; }
     .nav-links a::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 1px; background: var(--dark); transition: width .4s var(--ease); }
     .nav-links a:hover { color: var(--dark); }
     .nav-links a:hover::after { width: 100%; }
@@ -67,6 +67,14 @@
     .nav-upload:hover { border-color: var(--dark); color: var(--dark); }
     .nav-contact { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; padding: 10px 24px; background: var(--dark); border: 1px solid var(--dark); color: var(--white); transition: all .3s var(--ease); }
     .nav-contact:hover { background: transparent; color: var(--dark); }
+    /* 首页未滚动：导航浮于背景图上，需高对比 */
+    .nav.over-hero { background: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,.2) 70%, rgba(0,0,0,0)); }
+    .nav.over-hero .nav-logo,
+    .nav.over-hero .nav-links a { color: rgba(255,255,255,.94); text-shadow: 0 1px 4px rgba(0,0,0,.45); }
+    .nav.over-hero .nav-links a:hover,
+    .nav.over-hero .nav-links a.active { color: #fff; }
+    .nav.over-hero .nav-links a::after { background: rgba(255,255,255,.9); }
+    .nav.over-hero .nav-upload { color: rgba(255,255,255,.94); border-color: rgba(255,255,255,.45); text-shadow: 0 1px 4px rgba(0,0,0,.45); }
     .nav-toggle { display: none; flex-direction: column; gap: 5px; padding: 8px; background: none; border: none; }
     .nav-toggle span { width: 20px; height: 1.5px; background: var(--dark); }
     .dark-toggle { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--muted); display: flex; align-items: center; justify-content: center; transition: all .3s var(--ease); }
@@ -782,10 +790,19 @@ window.addEventListener('scroll', () => {
   if (navTicking) return;
   navTicking = true;
   requestAnimationFrame(() => {
-    document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
+    const nav = document.getElementById('nav');
+    nav.classList.toggle('scrolled', window.scrollY > 50);
+    updateNavOverHero();
     navTicking = false;
   });
 });
+
+/* 首页未滚动时导航浮于背景图上，启用高对比白字 */
+function updateNavOverHero() {
+  const nav = document.getElementById('nav');
+  const onHome = document.getElementById('page-home').classList.contains('active');
+  nav.classList.toggle('over-hero', onHome && window.scrollY <= 50);
+}
 
 /* ===== PAGE ROUTING ===== */
 function showPage(name) {
@@ -796,6 +813,7 @@ function showPage(name) {
   });
   window.scrollTo({ top: 0, behavior: 'instant' });
   document.getElementById('navLinks').classList.remove('open');
+  updateNavOverHero();
   refreshReveal();
 }
 
@@ -1498,6 +1516,7 @@ loadUploads();
 renderGallery();
 refreshReveal();
 initDarkMode();
+updateNavOverHero();
 loadCmsGallery();
 loadCmsPages();
 // Initialize map only when map page becomes visible
