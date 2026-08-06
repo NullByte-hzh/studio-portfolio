@@ -311,6 +311,10 @@ html.dark #giscus-container {
     .reveal-d2 { transition-delay: .2s; }
     .reveal-d3 { transition-delay: .3s; }
     .reveal-d4 { transition-delay: .4s; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+      .reveal { opacity: 1 !important; transform: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -332,7 +336,7 @@ html.dark #giscus-container {
     </button>
     <button class="nav-upload" onclick="document.getElementById('uploadInput').click()">上传照片</button>
     <button class="nav-contact" onclick="showPage('booking');return false;">联系我</button>
-    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">
+    <button class="nav-toggle" id="navToggle" aria-label="菜单" aria-expanded="false" onclick="const n=document.getElementById('navLinks');const o=n.classList.toggle('open');this.setAttribute('aria-expanded',o);">
       <span></span><span></span><span></span>
     </button>
   </div>
@@ -376,15 +380,15 @@ html.dark #giscus-container {
     </div>
     
     <div class="hero-dots" id="heroDots">
-      <button class="hero-dot active" onclick="goToSlide(0)"></button>
-      <button class="hero-dot" onclick="goToSlide(1)"></button>
-      <button class="hero-dot" onclick="goToSlide(2)"></button>
-      <button class="hero-dot" onclick="goToSlide(3)"></button>
+      <button class="hero-dot active" aria-label="第 1 张" onclick="goToSlide(0)"></button>
+      <button class="hero-dot" aria-label="第 2 张" onclick="goToSlide(1)"></button>
+      <button class="hero-dot" aria-label="第 3 张" onclick="goToSlide(2)"></button>
+      <button class="hero-dot" aria-label="第 4 张" onclick="goToSlide(3)"></button>
     </div>
     
     <div class="hero-nav">
-      <button class="hero-nav-btn" onclick="changeSlide(-1)">←</button>
-      <button class="hero-nav-btn" onclick="changeSlide(1)">→</button>
+      <button class="hero-nav-btn" aria-label="上一张" onclick="changeSlide(-1)">←</button>
+      <button class="hero-nav-btn" aria-label="下一张" onclick="changeSlide(1)">→</button>
     </div>
   </section>
 
@@ -407,7 +411,7 @@ html.dark #giscus-container {
         </div>
         <div class="cat-card-content">
           <h3 class="cat-card-label">人像摄影</h3>
-          <p class="cat-card-count">38 张作品</p>
+          <p class="cat-card-count" data-count="portrait">38 张作品</p>
         </div>
       </div>
       <div class="cat-card reveal reveal-d2" onclick="showPage('gallery');setTimeout(()=>setFilter('landscape'),100)">
@@ -416,7 +420,7 @@ html.dark #giscus-container {
         </div>
         <div class="cat-card-content">
           <h3 class="cat-card-label">风光摄影</h3>
-          <p class="cat-card-count">45 张作品</p>
+          <p class="cat-card-count" data-count="landscape">45 张作品</p>
         </div>
       </div>
       <div class="cat-card reveal reveal-d3" onclick="showPage('gallery');setTimeout(()=>setFilter('street'),100)">
@@ -425,7 +429,7 @@ html.dark #giscus-container {
         </div>
         <div class="cat-card-content">
           <h3 class="cat-card-label">街头摄影</h3>
-          <p class="cat-card-count">32 张作品</p>
+          <p class="cat-card-count" data-count="street">32 张作品</p>
         </div>
       </div>
     </div>
@@ -446,7 +450,7 @@ html.dark #giscus-container {
           <p>器材是 Nikon Z5II，风格偏向自然、真实、有温度。希望用镜头讲好每一个故事，如果你也在寻找能读懂你故事的摄影师，欢迎联系我。</p>
           <div class="about-stats">
             <div>
-              <div class="about-stat-num">120<span style="font-size:18px">+</span></div>
+              <div class="about-stat-num" id="statWorks">120<span style="font-size:18px">+</span></div>
               <div class="about-stat-label">拍摄作品</div>
             </div>
             <div>
@@ -695,14 +699,14 @@ html.dark #giscus-container {
 <!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox">
   <div class="lb-counter" id="lbCounter">1 / 16</div>
-  <button class="lb-close" onclick="closeLightbox()">✕</button>
-  <button class="lb-fullscreen" id="lbFullscreen" onclick="toggleFullscreen()" title="全屏浏览">⛶</button>
-  <button class="lb-slideshow" id="lbSlideshow" onclick="toggleSlideshow()" title="自动轮播">▶</button>
-  <button class="lb-nav lb-prev" onclick="lbPrev()">←</button>
+  <button class="lb-close" aria-label="关闭" onclick="closeLightbox()">✕</button>
+  <button class="lb-fullscreen" id="lbFullscreen" aria-label="全屏浏览" onclick="toggleFullscreen()" title="全屏浏览">⛶</button>
+  <button class="lb-slideshow" id="lbSlideshow" aria-label="自动轮播" onclick="toggleSlideshow()" title="自动轮播">▶</button>
+  <button class="lb-nav lb-prev" aria-label="上一张" onclick="lbPrev()">←</button>
   <div class="lb-container">
     <img class="lb-img" id="lbImg" src="" alt="" />
   </div>
-  <button class="lb-nav lb-next" onclick="lbNext()">→</button>
+  <button class="lb-nav lb-next" aria-label="下一张" onclick="lbNext()">→</button>
   <div class="lb-thumbs" id="lbThumbs"></div>
   <div class="lb-info">
     <div class="lb-title" id="lbTitle"></div>
@@ -796,6 +800,7 @@ function showPage(name) {
   });
   window.scrollTo({ top: 0, behavior: 'instant' });
   document.getElementById('navLinks').classList.remove('open');
+  const _nt = document.getElementById('navToggle'); if (_nt) _nt.setAttribute('aria-expanded', 'false');
   refreshReveal();
 }
 
@@ -995,6 +1000,7 @@ function openLightbox(idx) {
   const item = items[idx];
   if (!item) return;
   document.getElementById('lbImg').src = normalizeSrc(item.src || item.dataUrl);
+  document.getElementById('lbImg').alt = item.title;
   document.getElementById('lbTitle').textContent = item.title;
   document.getElementById('lbMeta').textContent = item.meta;
   
@@ -1053,6 +1059,7 @@ function openPanZoom(src) {
   
   const closeBtn = document.createElement('button');
   closeBtn.className = 'panzoom-close';
+  closeBtn.setAttribute('aria-label', '关闭');
   closeBtn.innerHTML = '✕';
   closeBtn.onclick = closePanZoom;
   
@@ -1247,7 +1254,7 @@ function initMap() {
       const marker = L.marker([lat, lng]).addTo(map);
       let popupContent = `<div style="font-weight:bold; margin-bottom:4px;">${items.length} 张作品</div><ul style="margin:4px 0 0 0; padding-left:16px;">`;
       items.forEach(item => {
-        popupContent += `<li><a href="#" onclick="openMapPhoto(${galleryData.indexOf(item)}); return false;">${item.title}</a></li>`;
+        popupContent += `<li><a href="#" onclick="openMapPhoto(${galleryData.indexOf(item)}); return false;">${escapeHtml(item.title)}</a></li>`;
       });
       popupContent += '</ul>';
       marker.bindPopup(popupContent);
@@ -1474,6 +1481,7 @@ async function loadCmsGallery() {
     if (entries.length) {
       galleryData.push(...entries);
       renderGallery();
+      updateHomeCounts();
     }
   } catch (e) { /* 保持内置画廊 */ }
 }
@@ -1493,11 +1501,22 @@ async function loadCmsPages() {
   } catch (e) {}
 }
 
+/* ===== HOME COUNTS ===== */
+function updateHomeCounts() {
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const cat = el.dataset.count;
+    el.textContent = `${galleryData.filter(i => i.cat === cat).length} 张作品`;
+  });
+  const works = document.getElementById('statWorks');
+  if (works) works.textContent = galleryData.length;
+}
+
 /* ===== INIT ===== */
 loadUploads();
 renderGallery();
 refreshReveal();
 initDarkMode();
+updateHomeCounts();
 loadCmsGallery();
 loadCmsPages();
 // Initialize map only when map page becomes visible
