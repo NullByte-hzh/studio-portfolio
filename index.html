@@ -715,7 +715,7 @@ html.dark #giscus-container {
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js" integrity="sha512-bE9sOOprru4D2nRKDQSNvhdxw47Jd0r2s7QThKB/KkU5HEPuxsk9DbK+fYIMCYlCsXkwp6M87vj84sAtYWqxvw==" crossorigin="anonymous"></script>
 <script>
 /* ===== DATA ===== */
 const galleryData = [
@@ -839,16 +839,26 @@ function filterGallery(btn, cat) {
 
 function setFilter(cat) {
   setTimeout(() => {
-    const target = document.querySelector(`.filter-btn[data-cat="${cat}"]`) || document.querySelector('.filter-btn');
+    const safeCat = (window.CSS && CSS.escape) ? CSS.escape(cat) : cat;
+    const target = document.querySelector(`.filter-btn[data-cat="${safeCat}"]`) || document.querySelector('.filter-btn');
     filterGallery(target, cat);
   }, 100);
 }
 
+let _galleryRemoveReady = false;
 function renderGallery() {
   const grid = document.getElementById('galleryGrid');
   const empty = document.getElementById('galleryEmpty');
   grid.innerHTML = '';
   const items = getAllItems();
+  if (!_galleryRemoveReady) {
+    grid.addEventListener('click', function(e) {
+      const btn = e.target.closest && e.target.closest('.remove-btn');
+      if (!btn) return;
+      removeUpload(btn.dataset.id);
+    });
+    _galleryRemoveReady = true;
+  }
 
   items.forEach((item, i) => {
     const el = document.createElement('div');
@@ -856,12 +866,12 @@ function renderGallery() {
     el.dataset.cat = item.cat;
     el.dataset.title = item.title;
     el.dataset.meta = item.meta;
-    el.onclick = () => openLightbox(i);
+    el.onclick = (e) => { if (e.target.closest && e.target.closest('.remove-btn')) return; openLightbox(i); };
 
     const title = escapeHtml(item.title);
     const meta = escapeHtml(item.meta);
     const removeBtn = item.uploaded
-      ? `<button class="remove-btn" onclick="removeUpload('${item.id}', event)">✕</button>`
+      ? `<button class="remove-btn" data-id="${item.id}" type="button" aria-label="移除">✕</button>`
       : '';
 
     el.innerHTML = `
@@ -924,8 +934,7 @@ function updateUploadCount() {
   btn.textContent = uploadedPhotos.length > 0 ? `我的上传 (${uploadedPhotos.length})` : '';
 }
 
-function removeUpload(id, event) {
-  event.stopPropagation();
+function removeUpload(id) {
   uploadedPhotos = uploadedPhotos.filter(p => p.id !== id);
   saveUploads();
   updateUploadCount();
