@@ -526,21 +526,7 @@ html.dark #giscus-container {
         <h2 class="section-title">留言讨论<span>欢迎交流提问</span></h2>
       </div>
       <div id="giscus-container" style="margin-top: 40px; padding: 24px 0; background: var(--bg-alt); border-radius: 8px;">
-        <script src="https://giscus.app/client.js"
-              data-repo="NullByte-hzh/studio-portfolio"
-              data-repo-id="R_kgDOSIJemA"
-              data-category="Q&A"
-              data-category-id="DIC_kwDOSIJemM4DCtIt"
-              data-mapping="pathname"
-              data-strict="0"
-              data-reactions-enabled="1"
-              data-emit-metadata="0"
-              data-input-position="bottom"
-              data-theme="preferred_color_scheme"
-              data-lang="zh-CN"
-              crossorigin="anonymous"
-              async>
-        </script>
+        <!-- Giscus 由文末脚本懒加载（滚到评论区附近再注入），避免进入地图页即拉取 -->
       </div>
     </div>
   </div>
@@ -594,6 +580,7 @@ html.dark #giscus-container {
   <div class="booking-form-section">
     <div class="booking-form-grid">
       <form class="booking-form reveal" action="https://formspree.io/f/xqerwwpw" method="POST" onsubmit="handleBooking(event)">
+        <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
         <div class="form-row">
           <div class="form-group">
             <label>姓名 <span class="req">*</span></label>
@@ -892,6 +879,14 @@ function normalizeSrc(src) {
   return src;
 }
 
+function hiRes(src) {
+  // 灯箱/放大用更高清版本（仅 Unsplash 支持）
+  if (typeof src === 'string' && src.indexOf('images.unsplash.com') !== -1) {
+    return src.replace('w=800', 'w=1600');
+  }
+  return src;
+}
+
 /* ===== UPLOAD SYSTEM ===== */
 const MAX_SIZE = 15 * 1024 * 1024;
 let uploadedPhotos = [];
@@ -994,7 +989,7 @@ function openLightbox(idx) {
   const items = getAllItems();
   const item = items[idx];
   if (!item) return;
-  document.getElementById('lbImg').src = normalizeSrc(item.src || item.dataUrl);
+  document.getElementById('lbImg').src = hiRes(normalizeSrc(item.src || item.dataUrl));
   document.getElementById('lbTitle').textContent = item.title;
   document.getElementById('lbMeta').textContent = item.meta;
   
@@ -1512,6 +1507,43 @@ document.addEventListener('click', function(e) {
     }, 100);
   }
 });
+
+/* Giscus 懒加载：滚到评论区附近再注入脚本 */
+(function() {
+  const container = document.getElementById('giscus-container');
+  if (!container) return;
+  let loaded = false;
+  function loadGiscus() {
+    if (loaded) return;
+    loaded = true;
+    const s = document.createElement('script');
+    s.src = 'https://giscus.app/client.js';
+    s.crossOrigin = 'anonymous';
+    s.async = true;
+    s.setAttribute('data-repo', 'NullByte-hzh/studio-portfolio');
+    s.setAttribute('data-repo-id', 'R_kgDOSIJemA');
+    s.setAttribute('data-category', 'Q&A');
+    s.setAttribute('data-category-id', 'DIC_kwDOSIJemM4DCtIt');
+    s.setAttribute('data-mapping', 'pathname');
+    s.setAttribute('data-strict', '0');
+    s.setAttribute('data-reactions-enabled', '1');
+    s.setAttribute('data-emit-metadata', '0');
+    s.setAttribute('data-input-position', 'bottom');
+    s.setAttribute('data-theme', 'preferred_color_scheme');
+    s.setAttribute('data-lang', 'zh-CN');
+    container.appendChild(s);
+  }
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) { loadGiscus(); io.disconnect(); }
+      });
+    }, { rootMargin: '300px' });
+    io.observe(container);
+  } else {
+    loadGiscus();
+  }
+})();
 </script>
 </body>
 </html>
