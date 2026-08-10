@@ -1,0 +1,39 @@
+{
+  "sw": {
+    "regCount": 0,
+    "regs": []
+  },
+  "swScript": {
+    "status": 200,
+    "head": "const CACHE_NAME = 'studio-v5';\n// 使用相对 scope 计算资源地址，兼容根目录与 GitHub Pages 子路径部署\nconst ASSETS = ['.', 'index.html', 'manifest.json', 'icon-192.svg']\n  .map(p => new URL(p, self.registration.scope).href)"
+  },
+  "heroLoaded": {
+    "photo-1469474968028-56623f02e42e": false,
+    "photo-1472214103451-9374bd1c798e": true
+  },
+  "galleryLoaded": {
+    "photo-1462275646964-a0e3386b89fa": true,
+    "photo-1494790108377-be9c29b29330": true
+  },
+  "map": {
+    "leafletLoaded": true,
+    "markers": 3,
+    "tiles": 24,
+    "tileLoaded": 24,
+    "firstTileUrl": "https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x=1672&y=892&z=11"
+  },
+  "leafletLoaded": true,
+  "bad": [
+    "404 https://api.github.com/repos/NullByte-hzh/studio-portfolio/contents/_gallery",
+    "404 https://raw.githubusercontent.com/NullByte-hzh/studio-portfolio/main/index.md",
+    "404 https://giscus.app/api/discussions?repo=NullByte-hzh%2Fstudio-portfolio&term=index&category=Q%26A&number=0&strict=false&first=15",
+    "404 https://giscus.app/api/discussions?repo=NullByte-hzh%2Fstudio-portfolio&term=index&category=Q%26A&number=0&strict=false&last=15"
+  ],
+  "consoleAll": [
+    "[error] Failed to load resource: the server responded with a status of 404 ()",
+    "[error] Failed to load resource: the server responded with a status of 404 ()",
+    "[error] Failed to load resource: the server responded with a status of 404 ()",
+    "[error] Failed to load resource: the server responded with a status of 404 ()",
+    "[log] SW registered"
+  ]
+}

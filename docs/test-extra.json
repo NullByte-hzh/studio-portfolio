@@ -1,0 +1,34 @@
+{
+  "cms": {
+    "cfg-media-block": {
+      "label": "cfg-media-block",
+      "cmsLoaded": true,
+      "configError": true,
+      "body": "Error loading the CMS configuration\nConfig Errors:\nconfig must have required property 'media_folder'\nconfig must have required property 'media_library'\nconfig must match a schema in anyOf\nCheck your config.yml file.",
+      "pageErrors": [
+        "Uncaught (in promise) Error: config must have required property 'media_folder'\nconfig must have required property 'media_library'\nconfig must match a schema in anyOf"
+      ]
+    },
+    "cfg-legacy": {
+      "label": "cfg-legacy",
+      "cmsLoaded": true,
+      "configError": true,
+      "body": "Error loading the CMS configuration\nConfig Errors:\nError: Missing external media library 'default'. Please use 'registerMediaLibrary' to register it.\nCheck your config.yml file.",
+      "pageErrors": []
+    },
+    "cfg-media-block-plus-lib": {
+      "label": "cfg-media-block-plus-lib",
+      "cmsLoaded": true,
+      "configError": true,
+      "body": "Error loading the CMS configuration\nConfig Errors:\nError: Missing external media library 'default'. Please use 'registerMediaLibrary' to register it.\nCheck your config.yml file.",
+      "pageErrors": []
+    },
+    "cfg-final": {
+      "label": "cfg-final",
+      "cmsLoaded": true,
+      "configError": false,
+      "body": "Login with GitHub",
+      "pageErrors": []
+    }
+  }
+}

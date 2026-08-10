@@ -1,0 +1,16 @@
+{
+  "adminPage": {
+    "cmsLoaded": true,
+    "body": "Login with GitHub"
+  },
+  "authPopup": {
+    "url": "https://api.netlify.com/auth?provider=github&site_id=127.0.0.1&scope=repo"
+  },
+  "logs": [
+    "[log] decap-cms-app 3.15.1",
+    "[log] decap-cms-core 3.17.1",
+    "[log] decap-cms 3.15.1",
+    "[log] Response for config.yml was not yaml. (Content-Type: text/plain; charset=utf-8)",
+    "[error] Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

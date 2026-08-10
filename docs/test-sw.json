@@ -1,0 +1,27 @@
+{
+  "states": {
+    "sw-a.js": [
+      "installed",
+      "activating",
+      "activated",
+      "redundant"
+    ],
+    "sw-b.js": [
+      "installed",
+      "activating",
+      "activated"
+    ]
+  },
+  "regs": [
+    {
+      "scope": "http://127.0.0.1:8773/",
+      "active": true,
+      "installing": false,
+      "waiting": false,
+      "script": "http://127.0.0.1:8773/sw-b.js"
+    }
+  ],
+  "logs": [
+    "[error] Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

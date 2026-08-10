@@ -1,0 +1,65 @@
+{
+  "swScript": {
+    "status": 200,
+    "head": "const CACHE_NAME = 'studio-v5';\n// 资源清单；在 install 事件内基于 registration.scope 计算绝对地址，\n// 兼容根目录与 GitHub Pages 子路径部署（顶层访问 sel"
+  },
+  "swInitial": [],
+  "manifest": {
+    "manifestUrl": "http://127.0.0.1:8774/studio-portfolio/manifest.json",
+    "startUrlResolved": "http://127.0.0.1:8774/studio-portfolio/",
+    "scopeResolved": "http://127.0.0.1:8774/studio-portfolio/"
+  },
+  "normalizeSrc": {
+    "uploadsAbs": "uploads/a.jpg",
+    "fullUrl": "https://x.com/a.jpg",
+    "dataUrl": "data:image/png;base64,xx"
+  },
+  "adminTarget": {
+    "status": 200,
+    "url": "http://127.0.0.1:8774/studio-portfolio/admin/"
+  },
+  "sw": {
+    "regs": [
+      {
+        "scope": "http://127.0.0.1:8774/studio-portfolio/",
+        "active": true
+      }
+    ],
+    "controller": true,
+    "caches": {
+      "studio-v5": [
+        "http://127.0.0.1:8774/studio-portfolio/",
+        "http://127.0.0.1:8774/studio-portfolio/index.html",
+        "http://127.0.0.1:8774/studio-portfolio/manifest.json",
+        "http://127.0.0.1:8774/studio-portfolio/icon-192.svg"
+      ]
+    }
+  },
+  "offline": {
+    "title": "STUDIO | 摄影作品集",
+    "bodyLength": 509,
+    "hero": true
+  },
+  "logs": [
+    "[http404] https://raw.githubusercontent.com/NullByte-hzh/studio-portfolio/main/index.md",
+    "[error] Failed to load resource: the server responded with a status of 404 ()",
+    "[http404] https://api.github.com/repos/NullByte-hzh/studio-portfolio/contents/_gallery",
+    "[error] Failed to load resource: the server responded with a status of 404 ()",
+    "[http404] https://giscus.app/api/discussions?repo=NullByte-hzh%2Fstudio-portfolio&term=studio-portfolio%2F&category=Q%26A&number=0&strict=false&last=15",
+    "[error] Failed to load resource: the server responded with a status of 404 ()",
+    "[http404] https://giscus.app/api/discussions?repo=NullByte-hzh%2Fstudio-portfolio&term=studio-portfolio%2F&category=Q%26A&number=0&strict=false&first=15",
+    "[error] Failed to load resource: the server responded with a status of 404 ()",
+    "[warning] [giscus] Discussion not found. A new discussion will be created if a comment/reaction is submitted.",
+    "[warning] [giscus] Discussion not found. A new discussion will be created if a comment/reaction is submitted.",
+    "[http404] https://raw.githubusercontent.com/NullByte-hzh/studio-portfolio/main/index.md",
+    "[error] Failed to load resource: the server responded with a status of 404 ()",
+    "[http404] https://api.github.com/repos/NullByte-hzh/studio-portfolio/contents/_gallery",
+    "[error] Failed to load resource: the server responded with a status of 404 ()",
+    "[log] SW registered",
+    "[http404] https://giscus.app/api/discussions?repo=NullByte-hzh%2Fstudio-portfolio&term=studio-portfolio%2F&category=Q%26A&number=0&strict=false&last=15",
+    "[error] Failed to load resource: the server responded with a status of 404 ()",
+    "[warning] [giscus] Discussion not found. A new discussion will be created if a comment/reaction is submitted.",
+    "[http404] https://giscus.app/api/discussions?repo=NullByte-hzh%2Fstudio-portfolio&term=studio-portfolio%2F&category=Q%26A&number=0&strict=false&first=15",
+    "[error] Failed to load resource: the server responded with a status of 404 ()"
+  ]
+}
