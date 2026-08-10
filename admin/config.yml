@@ -2,8 +2,6 @@ backend:
   name: github
   repo: NullByte-hzh/studio-portfolio
   branch: main
-  base_url: https://api.github.com
-  auth_endpoint: https://github.com/login/oauth/authorize
 
 media_folder: 'uploads'
 public_folder: '/uploads'
