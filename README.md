@@ -127,6 +127,10 @@ npx serve .
 - `index.html`：替换失效的 Unsplash 图片链接、修复「我的上传」过滤、`/uploads/` 路径归一化、地图改用高德瓦片并保留 OSM 回退、管理链接改为相对路径、加载 CMS 画廊与首页内容、补全真实联系方式。
 - `manifest.json`：相对 `start_url`/`scope` 以兼容子路径部署。
 - `service-worker.js`：基于 `registration.scope` 的域相对资源缓存（修复根目录访问 `self.registration` 导致 worker 失效的问题）。
+- `index.html`（安全）：画廊与灯箱动态拼接的 HTML 属性值（`src`、`data-id`）全部转义，杜绝 CMS 数据注入 XSS。
+- `index.html`（地图）：内置与 CMS 作品分配稳定 id（`g*` / `cms*`），地图弹窗改为按 id 查找，修复 CMS 数据异步加载后灯箱索引错位的问题。
+- `index.html`（UI）：滚动后导航栏改为毛玻璃透明态（半透明底 + `backdrop-filter` 模糊/提饱和，暗色模式同步适配）。
+- `index.html`（UI）：Hero 按钮悬停样式优化——次按钮悬停为半透明白，主按钮悬停反转为透明 + 白边，保持主次区分。
 
 ---
 
