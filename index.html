@@ -9,7 +9,13 @@
   <meta property="og:title" content="STUDIO | 摄影作品集" />
   <meta property="og:description" content="独立摄影师，专注于人像、风光与街头摄影。用镜头捕捉生活的温度。" />
   <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://nullbyte-hzh.github.io/studio-portfolio/" />
+  <meta property="og:image" content="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80" />
+  <meta property="og:site_name" content="STUDIO 摄影作品集" />
+  <meta property="og:locale" content="zh_CN" />
+  <link rel="canonical" href="https://nullbyte-hzh.github.io/studio-portfolio/" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80" />
   
   <!-- PWA -->
   <meta name="theme-color" content="#1a1a1a" id="theme-color-meta" />
@@ -53,10 +59,10 @@
     /* NAV */
     .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 0 48px; height: 72px; display: flex; align-items: center; justify-content: space-between; transition: all .4s var(--ease); }
     .nav.scrolled { background: var(--scrim); backdrop-filter: blur(20px); box-shadow: 0 1px 0 var(--border); height: 64px; }
-    .nav-logo { font-size: 13px; font-weight: 500; letter-spacing: .35em; color: var(--dark); transition: opacity .3s; }
+    .nav-logo { font-family: Georgia, serif; font-size: 13px; font-weight: 500; letter-spacing: .35em; color: var(--dark); transition: opacity .3s; }
     .nav-logo:hover { opacity: .7; }
     .nav-links { display: flex; gap: 48px; list-style: none; }
-    .nav-links a { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); position: relative; padding: 8px 0; transition: color .3s; }
+    .nav-links a { font-size: 12px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); position: relative; padding: 8px 0; transition: color .3s; }
     .nav-links a::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 1px; background: var(--dark); transition: width .4s var(--ease); }
     .nav-links a:hover { color: var(--dark); }
     .nav-links a:hover::after { width: 100%; }
@@ -67,6 +73,14 @@
     .nav-upload:hover { border-color: var(--dark); color: var(--dark); }
     .nav-contact { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; padding: 10px 24px; background: var(--dark); border: 1px solid var(--dark); color: var(--white); transition: all .3s var(--ease); }
     .nav-contact:hover { background: transparent; color: var(--dark); }
+    /* 首页未滚动：导航浮于背景图上，需高对比 */
+    .nav.over-hero { background: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,.2) 70%, rgba(0,0,0,0)); }
+    .nav.over-hero .nav-logo,
+    .nav.over-hero .nav-links a { color: rgba(255,255,255,.94); text-shadow: 0 1px 4px rgba(0,0,0,.45); }
+    .nav.over-hero .nav-links a:hover,
+    .nav.over-hero .nav-links a.active { color: #fff; }
+    .nav.over-hero .nav-links a::after { background: rgba(255,255,255,.9); }
+    .nav.over-hero .nav-upload { color: rgba(255,255,255,.94); border-color: rgba(255,255,255,.45); text-shadow: 0 1px 4px rgba(0,0,0,.45); }
     .nav-toggle { display: none; flex-direction: column; gap: 5px; padding: 8px; background: none; border: none; }
     .nav-toggle span { width: 20px; height: 1.5px; background: var(--dark); }
     .dark-toggle { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--muted); display: flex; align-items: center; justify-content: center; transition: all .3s var(--ease); }
@@ -138,6 +152,7 @@
     .cat-card:hover .cat-card-content { opacity: 1; }
     .cat-card-label { color: var(--white); font-size: 20px; font-weight: 400; letter-spacing: .05em; margin-bottom: 8px; }
     .cat-card-count { color: rgba(255,255,255,.7); font-size: 11px; letter-spacing: .15em; }
+    .cat-card:focus-visible { outline: 2px solid var(--accent-warm); outline-offset: 3px; }
     @media (max-width: 900px) { .cat-grid { grid-template-columns: 1fr; gap: 24px; } .cat-card-content { opacity: 1; } }
 
     /* ABOUT */
@@ -311,7 +326,14 @@ html.dark #giscus-container {
     .reveal-d2 { transition-delay: .2s; }
     .reveal-d3 { transition-delay: .3s; }
     .reveal-d4 { transition-delay: .4s; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+      .reveal { opacity: 1 !important; transform: none !important; }
+    }
   </style>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"ProfessionalService","name":"STUDIO 摄影作品集","description":"独立摄影师，专注人像、风光与街头摄影","areaServed":"深圳","url":"https://nullbyte-hzh.github.io/studio-portfolio/","email":"haozhihao9502@163.com","priceRange":"¥680-¥2380"}
+  </script>
 </head>
 <body>
 
@@ -332,7 +354,7 @@ html.dark #giscus-container {
     </button>
     <button class="nav-upload" onclick="document.getElementById('uploadInput').click()">上传照片</button>
     <button class="nav-contact" onclick="showPage('booking');return false;">联系我</button>
-    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">
+    <button class="nav-toggle" id="navToggle" aria-label="菜单" aria-expanded="false" onclick="const n=document.getElementById('navLinks');const o=n.classList.toggle('open');this.setAttribute('aria-expanded',o);">
       <span></span><span></span><span></span>
     </button>
   </div>
@@ -346,16 +368,16 @@ html.dark #giscus-container {
   <section class="hero">
     <div class="hero-bg">
       <div class="hero-slide active">
-        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80" alt="" />
+        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80" alt="" srcset="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=640&q=70 640w, https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=75 1200w, https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80 1920w" sizes="100vw" />
       </div>
       <div class="hero-slide">
-        <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80" alt="" />
+        <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80" alt="" srcset="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=640&q=70 640w, https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&q=75 1200w, https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80 1920w" sizes="100vw" />
       </div>
       <div class="hero-slide">
-        <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&q=80" alt="" />
+        <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&q=80" alt="" srcset="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=640&q=70 640w, https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&q=75 1200w, https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&q=80 1920w" sizes="100vw" />
       </div>
       <div class="hero-slide">
-        <img src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1920&q=80" alt="" />
+        <img src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1920&q=80" alt="" srcset="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=640&q=70 640w, https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1200&q=75 1200w, https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1920&q=80 1920w" sizes="100vw" />
       </div>
       <div class="hero-overlay"></div>
     </div>
@@ -376,15 +398,15 @@ html.dark #giscus-container {
     </div>
     
     <div class="hero-dots" id="heroDots">
-      <button class="hero-dot active" onclick="goToSlide(0)"></button>
-      <button class="hero-dot" onclick="goToSlide(1)"></button>
-      <button class="hero-dot" onclick="goToSlide(2)"></button>
-      <button class="hero-dot" onclick="goToSlide(3)"></button>
+      <button class="hero-dot active" aria-label="第 1 张" onclick="goToSlide(0)"></button>
+      <button class="hero-dot" aria-label="第 2 张" onclick="goToSlide(1)"></button>
+      <button class="hero-dot" aria-label="第 3 张" onclick="goToSlide(2)"></button>
+      <button class="hero-dot" aria-label="第 4 张" onclick="goToSlide(3)"></button>
     </div>
     
     <div class="hero-nav">
-      <button class="hero-nav-btn" onclick="changeSlide(-1)">←</button>
-      <button class="hero-nav-btn" onclick="changeSlide(1)">→</button>
+      <button class="hero-nav-btn" aria-label="上一张" onclick="changeSlide(-1)">←</button>
+      <button class="hero-nav-btn" aria-label="下一张" onclick="changeSlide(1)">→</button>
     </div>
   </section>
 
@@ -401,31 +423,31 @@ html.dark #giscus-container {
     </div>
     
     <div class="cat-grid">
-      <div class="cat-card reveal reveal-d1" onclick="showPage('gallery');setTimeout(()=>setFilter('portrait'),100)">
+      <div class="cat-card reveal reveal-d1" role="button" tabindex="0" onclick="showPage('gallery');setTimeout(()=>setFilter('portrait'),100)">
         <div class="cat-card-img">
           <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&q=80" alt="人像摄影" />
         </div>
         <div class="cat-card-content">
           <h3 class="cat-card-label">人像摄影</h3>
-          <p class="cat-card-count">38 张作品</p>
+          <p class="cat-card-count" data-count="portrait">38 张作品</p>
         </div>
       </div>
-      <div class="cat-card reveal reveal-d2" onclick="showPage('gallery');setTimeout(()=>setFilter('landscape'),100)">
+      <div class="cat-card reveal reveal-d2" role="button" tabindex="0" onclick="showPage('gallery');setTimeout(()=>setFilter('landscape'),100)">
         <div class="cat-card-img">
           <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80" alt="风光摄影" />
         </div>
         <div class="cat-card-content">
           <h3 class="cat-card-label">风光摄影</h3>
-          <p class="cat-card-count">45 张作品</p>
+          <p class="cat-card-count" data-count="landscape">45 张作品</p>
         </div>
       </div>
-      <div class="cat-card reveal reveal-d3" onclick="showPage('gallery');setTimeout(()=>setFilter('street'),100)">
+      <div class="cat-card reveal reveal-d3" role="button" tabindex="0" onclick="showPage('gallery');setTimeout(()=>setFilter('street'),100)">
         <div class="cat-card-img">
           <img src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80" alt="街头摄影" />
         </div>
         <div class="cat-card-content">
           <h3 class="cat-card-label">街头摄影</h3>
-          <p class="cat-card-count">32 张作品</p>
+          <p class="cat-card-count" data-count="street">32 张作品</p>
         </div>
       </div>
     </div>
@@ -446,7 +468,7 @@ html.dark #giscus-container {
           <p>器材是 Nikon Z5II，风格偏向自然、真实、有温度。希望用镜头讲好每一个故事，如果你也在寻找能读懂你故事的摄影师，欢迎联系我。</p>
           <div class="about-stats">
             <div>
-              <div class="about-stat-num">120<span style="font-size:18px">+</span></div>
+              <div class="about-stat-num" id="statWorks">120<span style="font-size:18px">+</span></div>
               <div class="about-stat-label">拍摄作品</div>
             </div>
             <div>
@@ -526,21 +548,7 @@ html.dark #giscus-container {
         <h2 class="section-title">留言讨论<span>欢迎交流提问</span></h2>
       </div>
       <div id="giscus-container" style="margin-top: 40px; padding: 24px 0; background: var(--bg-alt); border-radius: 8px;">
-        <script src="https://giscus.app/client.js"
-              data-repo="NullByte-hzh/studio-portfolio"
-              data-repo-id="R_kgDOSIJemA"
-              data-category="Q&A"
-              data-category-id="DIC_kwDOSIJemM4DCtIt"
-              data-mapping="pathname"
-              data-strict="0"
-              data-reactions-enabled="1"
-              data-emit-metadata="0"
-              data-input-position="bottom"
-              data-theme="preferred_color_scheme"
-              data-lang="zh-CN"
-              crossorigin="anonymous"
-              async>
-        </script>
+        <!-- Giscus 由文末脚本懒加载（滚到评论区附近再注入），避免进入地图页即拉取 -->
       </div>
     </div>
   </div>
@@ -594,6 +602,7 @@ html.dark #giscus-container {
   <div class="booking-form-section">
     <div class="booking-form-grid">
       <form class="booking-form reveal" action="https://formspree.io/f/xqerwwpw" method="POST" onsubmit="handleBooking(event)">
+        <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
         <div class="form-row">
           <div class="form-group">
             <label>姓名 <span class="req">*</span></label>
@@ -695,14 +704,14 @@ html.dark #giscus-container {
 <!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox">
   <div class="lb-counter" id="lbCounter">1 / 16</div>
-  <button class="lb-close" onclick="closeLightbox()">✕</button>
-  <button class="lb-fullscreen" id="lbFullscreen" onclick="toggleFullscreen()" title="全屏浏览">⛶</button>
-  <button class="lb-slideshow" id="lbSlideshow" onclick="toggleSlideshow()" title="自动轮播">▶</button>
-  <button class="lb-nav lb-prev" onclick="lbPrev()">←</button>
+  <button class="lb-close" aria-label="关闭" onclick="closeLightbox()">✕</button>
+  <button class="lb-fullscreen" id="lbFullscreen" aria-label="全屏浏览" onclick="toggleFullscreen()" title="全屏浏览">⛶</button>
+  <button class="lb-slideshow" id="lbSlideshow" aria-label="自动轮播" onclick="toggleSlideshow()" title="自动轮播">▶</button>
+  <button class="lb-nav lb-prev" aria-label="上一张" onclick="lbPrev()">←</button>
   <div class="lb-container">
     <img class="lb-img" id="lbImg" src="" alt="" />
   </div>
-  <button class="lb-nav lb-next" onclick="lbNext()">→</button>
+  <button class="lb-nav lb-next" aria-label="下一张" onclick="lbNext()">→</button>
   <div class="lb-thumbs" id="lbThumbs"></div>
   <div class="lb-info">
     <div class="lb-title" id="lbTitle"></div>
@@ -715,7 +724,7 @@ html.dark #giscus-container {
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js" integrity="sha512-bE9sOOprru4D2nRKDQSNvhdxw47Jd0r2s7QThKB/KkU5HEPuxsk9DbK+fYIMCYlCsXkwp6M87vj84sAtYWqxvw==" crossorigin="anonymous"></script>
 <script>
 /* ===== DATA ===== */
 const galleryData = [
@@ -736,6 +745,8 @@ const galleryData = [
   { cat: 'nature', title: '海边礁石', meta: '自然 · 海景', lat: 22.5200, lng: 114.0300, src: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&q=80' },
   { cat: 'street', title: '雨中', meta: '街拍 · 情绪', src: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=800&q=80' }
 ];
+// 为内置画廊条目分配稳定 id，供地图弹窗按 id 定位（避免数组下标漂移）
+galleryData.forEach((item, i) => { item.id = 'g' + i; });
 
 /* ===== EXIF READING ===== */
 function readExifData(imgElement, callback) {
@@ -782,10 +793,19 @@ window.addEventListener('scroll', () => {
   if (navTicking) return;
   navTicking = true;
   requestAnimationFrame(() => {
-    document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
+    const nav = document.getElementById('nav');
+    nav.classList.toggle('scrolled', window.scrollY > 50);
+    updateNavOverHero();
     navTicking = false;
   });
 });
+
+/* 首页未滚动时导航浮于背景图上，启用高对比白字 */
+function updateNavOverHero() {
+  const nav = document.getElementById('nav');
+  const onHome = document.getElementById('page-home').classList.contains('active');
+  nav.classList.toggle('over-hero', onHome && window.scrollY <= 50);
+}
 
 /* ===== PAGE ROUTING ===== */
 function showPage(name) {
@@ -796,6 +816,8 @@ function showPage(name) {
   });
   window.scrollTo({ top: 0, behavior: 'instant' });
   document.getElementById('navLinks').classList.remove('open');
+  const _nt = document.getElementById('navToggle'); if (_nt) _nt.setAttribute('aria-expanded', 'false');
+  updateNavOverHero();
   refreshReveal();
 }
 
@@ -826,6 +848,13 @@ function resetAuto() {
 }
 
 resetAuto();
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
+    clearInterval(autoTimer);
+  } else {
+    resetAuto();
+  }
+});
 
 /* ===== GALLERY FILTER ===== */
 let currentFilter = 'all';
@@ -839,16 +868,26 @@ function filterGallery(btn, cat) {
 
 function setFilter(cat) {
   setTimeout(() => {
-    const target = document.querySelector(`.filter-btn[data-cat="${cat}"]`) || document.querySelector('.filter-btn');
+    const safeCat = (window.CSS && CSS.escape) ? CSS.escape(cat) : cat;
+    const target = document.querySelector(`.filter-btn[data-cat="${safeCat}"]`) || document.querySelector('.filter-btn');
     filterGallery(target, cat);
   }, 100);
 }
 
+let _galleryRemoveReady = false;
 function renderGallery() {
   const grid = document.getElementById('galleryGrid');
   const empty = document.getElementById('galleryEmpty');
   grid.innerHTML = '';
   const items = getAllItems();
+  if (!_galleryRemoveReady) {
+    grid.addEventListener('click', function(e) {
+      const btn = e.target.closest && e.target.closest('.remove-btn');
+      if (!btn) return;
+      removeUpload(btn.dataset.id);
+    });
+    _galleryRemoveReady = true;
+  }
 
   items.forEach((item, i) => {
     const el = document.createElement('div');
@@ -856,17 +895,17 @@ function renderGallery() {
     el.dataset.cat = item.cat;
     el.dataset.title = item.title;
     el.dataset.meta = item.meta;
-    el.onclick = () => openLightbox(i);
+    el.onclick = (e) => { if (e.target.closest && e.target.closest('.remove-btn')) return; openLightbox(i); };
 
     const title = escapeHtml(item.title);
     const meta = escapeHtml(item.meta);
     const removeBtn = item.uploaded
-      ? `<button class="remove-btn" onclick="removeUpload('${item.id}', event)">✕</button>`
+      ? `<button class="remove-btn" data-id="${escapeHtml(item.id)}" type="button" aria-label="移除">✕</button>`
       : '';
 
     el.innerHTML = `
       ${removeBtn}
-      <img src="${normalizeSrc(item.src)}" alt="${title}" loading="lazy" />
+      <img src="${escapeHtml(normalizeSrc(item.src))}" alt="${title}" loading="lazy" />
       <div class="masonry-overlay">
         <h3 class="masonry-title">${title}</h3>
         <p class="masonry-meta">${meta}</p>
@@ -888,6 +927,14 @@ function normalizeSrc(src) {
   // Decap CMS 生成的 media 路径可能是 /uploads/xxx，部署在子路径时需要去掉前导斜杠
   if (typeof src === 'string' && src.startsWith('/uploads/')) {
     return src.slice(1);
+  }
+  return src;
+}
+
+function hiRes(src) {
+  // 灯箱/放大用更高清版本（仅 Unsplash 支持）
+  if (typeof src === 'string' && src.indexOf('images.unsplash.com') !== -1) {
+    return src.replace('w=800', 'w=1600');
   }
   return src;
 }
@@ -924,8 +971,7 @@ function updateUploadCount() {
   btn.textContent = uploadedPhotos.length > 0 ? `我的上传 (${uploadedPhotos.length})` : '';
 }
 
-function removeUpload(id, event) {
-  event.stopPropagation();
+function removeUpload(id) {
   uploadedPhotos = uploadedPhotos.filter(p => p.id !== id);
   saveUploads();
   updateUploadCount();
@@ -937,7 +983,8 @@ document.getElementById('uploadInput').addEventListener('change', function(e) {
   const files = Array.from(e.target.files);
   if (!files.length) return;
   
-  let added = 0;
+  const valid = files.filter(f => f.type.startsWith('image/') && f.size <= MAX_SIZE);
+  let done = 0;
   files.forEach(file => {
     if (!file.type.startsWith('image/')) return;
     if (file.size > MAX_SIZE) {
@@ -954,14 +1001,14 @@ document.getElementById('uploadInput').addEventListener('change', function(e) {
       });
       saveUploads();
       updateUploadCount();
-      added++;
-      if (added > 0) {
-        showToast(`已上传 ${added} 张照片`);
-      }
-      if (added === 1 && uploadedPhotos.length === 1) {
-        setTimeout(() => filterGallery(null, 'uploaded'), 100);
-      }
       renderGallery();
+      done++;
+      if (done === valid.length) {
+        showToast(`已上传 ${done} 张照片`);
+        if (uploadedPhotos.length === done) {
+          setTimeout(() => filterGallery(null, 'uploaded'), 100);
+        }
+      }
     };
     reader.readAsDataURL(file);
   });
@@ -971,6 +1018,7 @@ document.getElementById('uploadInput').addEventListener('change', function(e) {
 
 /* ===== LIGHTBOX ===== */
 let lbIdx = 0;
+let lbReturnFocus = null;
 
 function getAllItems() {
   if (currentFilter === 'uploaded') {
@@ -994,7 +1042,8 @@ function openLightbox(idx) {
   const items = getAllItems();
   const item = items[idx];
   if (!item) return;
-  document.getElementById('lbImg').src = normalizeSrc(item.src || item.dataUrl);
+  document.getElementById('lbImg').src = hiRes(normalizeSrc(item.src || item.dataUrl));
+  document.getElementById('lbImg').alt = item.title;
   document.getElementById('lbTitle').textContent = item.title;
   document.getElementById('lbMeta').textContent = item.meta;
   
@@ -1029,8 +1078,10 @@ function openLightbox(idx) {
   lbIdx = idx;
   updateLbCounter(items.length);
   renderThumbs(items);
+  lbReturnFocus = document.activeElement;
   document.getElementById('lightbox').classList.add('open');
   document.body.style.overflow = 'hidden';
+  setTimeout(() => { const f = document.getElementById('lightbox').querySelector('button'); if (f) f.focus(); }, 60);
 }
 
 /* ===== ZOOM/PAN ON DOUBLE CLICK ===== */
@@ -1053,6 +1104,7 @@ function openPanZoom(src) {
   
   const closeBtn = document.createElement('button');
   closeBtn.className = 'panzoom-close';
+  closeBtn.setAttribute('aria-label', '关闭');
   closeBtn.innerHTML = '✕';
   closeBtn.onclick = closePanZoom;
   
@@ -1247,7 +1299,7 @@ function initMap() {
       const marker = L.marker([lat, lng]).addTo(map);
       let popupContent = `<div style="font-weight:bold; margin-bottom:4px;">${items.length} 张作品</div><ul style="margin:4px 0 0 0; padding-left:16px;">`;
       items.forEach(item => {
-        popupContent += `<li><a href="#" onclick="openMapPhoto(${galleryData.indexOf(item)}); return false;">${item.title}</a></li>`;
+        popupContent += `<li><a href="#" onclick="openMapPhoto('${escapeHtml(item.id)}'); return false;">${escapeHtml(item.title)}</a></li>`;
       });
       popupContent += '</ul>';
       marker.bindPopup(popupContent);
@@ -1263,9 +1315,16 @@ function initMap() {
   });
 }
 
-function openMapPhoto(idx) {
+function openMapPhoto(id) {
+  const allBtn = document.querySelector('.filter-btn[data-cat="all"]');
+  filterGallery(allBtn, 'all');
   showPage('gallery');
-  setTimeout(() => openLightbox(idx), 300);
+  setTimeout(() => {
+    // 按 id 在当前可见条目中查找，避免 galleryData 下标与 getAllItems() 不一致
+    const items = getAllItems();
+    const idx = items.findIndex(it => it.id === id);
+    if (idx >= 0) openLightbox(idx);
+  }, 300);
 }
 
 function closeLightbox() {
@@ -1278,6 +1337,7 @@ function closeLightbox() {
   isSlideshow = false;
   const btn = document.getElementById('lbSlideshow');
   if (btn) btn.classList.remove('active');
+  if (lbReturnFocus) { lbReturnFocus.focus(); lbReturnFocus = null; }
 }
 
 function lbPrev() {
@@ -1304,7 +1364,7 @@ function renderThumbs(items) {
     const thumb = document.createElement('div');
     thumb.className = 'lb-thumb';
     const idx = items.indexOf(item);
-    thumb.innerHTML = `<img src="${normalizeSrc(item.src || item.dataUrl)}" alt="" />`;
+    thumb.innerHTML = `<img src="${escapeHtml(normalizeSrc(item.src || item.dataUrl))}" alt="" />`;
     thumb.onclick = () => openLightbox(idx);
     container.appendChild(thumb);
   });
@@ -1314,10 +1374,25 @@ document.getElementById('lightbox').addEventListener('click', e => {
   if (e.target.id === 'lightbox' || e.target.classList.contains('lb-container')) closeLightbox();
 });
 document.addEventListener('keydown', e => {
-  if (!document.getElementById('lightbox').classList.contains('open')) return;
-  if (e.key === 'Escape') closeLightbox();
-  if (e.key === 'ArrowLeft') lbPrev();
-  if (e.key === 'ArrowRight') lbNext();
+  const lb = document.getElementById('lightbox');
+  if (!lb.classList.contains('open')) return;
+  if (e.key === 'Escape') { closeLightbox(); return; }
+  if (e.key === 'ArrowLeft') { lbPrev(); return; }
+  if (e.key === 'ArrowRight') { lbNext(); return; }
+  if (e.key === 'Tab') {
+    const list = Array.from(lb.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')).filter(el => el.offsetParent !== null);
+    if (list.length < 2) return;
+    const first = list[0], last = list[list.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+/* [role=button] 键盘可达：Enter/Space 触发 click */
+document.addEventListener('keydown', function(e) {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role="button"]')) {
+    e.preventDefault();
+    e.target.click();
+  }
 });
 
 /* ===== BOOKING ===== */
@@ -1472,8 +1547,10 @@ async function loadCmsGallery() {
       } catch (e) { /* 跳过损坏条目 */ }
     }
     if (entries.length) {
+      entries.forEach((entry, i) => { entry.id = 'cms' + i; });
       galleryData.push(...entries);
       renderGallery();
+      updateHomeCounts();
     }
   } catch (e) { /* 保持内置画廊 */ }
 }
@@ -1493,11 +1570,23 @@ async function loadCmsPages() {
   } catch (e) {}
 }
 
+/* ===== HOME COUNTS ===== */
+function updateHomeCounts() {
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const cat = el.dataset.count;
+    el.textContent = `${galleryData.filter(i => i.cat === cat).length} 张作品`;
+  });
+  const works = document.getElementById('statWorks');
+  if (works) works.textContent = galleryData.length;
+}
+
 /* ===== INIT ===== */
 loadUploads();
 renderGallery();
 refreshReveal();
 initDarkMode();
+updateNavOverHero();
+updateHomeCounts();
 loadCmsGallery();
 loadCmsPages();
 // Initialize map only when map page becomes visible
@@ -1512,6 +1601,49 @@ document.addEventListener('click', function(e) {
     }, 100);
   }
 });
-</script>
+
+/* 移动端菜单：点击导航外部关闭 */
+document.addEventListener('click', function(e) {
+  const nav = document.getElementById('nav');
+  if (nav && !nav.contains(e.target)) {
+    document.getElementById('navLinks').classList.remove('open');
+  }
+});
+/* Giscus 懒加载：滚到评论区附近再注入脚本 */
+(function() {
+  const container = document.getElementById('giscus-container');
+  if (!container) return;
+  let loaded = false;
+  function loadGiscus() {
+    if (loaded) return;
+    loaded = true;
+    const s = document.createElement('script');
+    s.src = 'https://giscus.app/client.js';
+    s.crossOrigin = 'anonymous';
+    s.async = true;
+    s.setAttribute('data-repo', 'NullByte-hzh/studio-portfolio');
+    s.setAttribute('data-repo-id', 'R_kgDOSIJemA');
+    s.setAttribute('data-category', 'Q&A');
+    s.setAttribute('data-category-id', 'DIC_kwDOSIJemM4DCtIt');
+    s.setAttribute('data-mapping', 'pathname');
+    s.setAttribute('data-strict', '0');
+    s.setAttribute('data-reactions-enabled', '1');
+    s.setAttribute('data-emit-metadata', '0');
+    s.setAttribute('data-input-position', 'bottom');
+    s.setAttribute('data-theme', 'preferred_color_scheme');
+    s.setAttribute('data-lang', 'zh-CN');
+    container.appendChild(s);
+  }
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) { loadGiscus(); io.disconnect(); }
+      });
+    }, { rootMargin: '300px' });
+    io.observe(container);
+  } else {
+    loadGiscus();
+  }
+})();</script>
 </body>
 </html>
