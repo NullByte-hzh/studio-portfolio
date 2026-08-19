@@ -309,7 +309,7 @@
     @media (max-width: 768px) { .map-page { padding: 100px 24px 60px; } .map-container { height: calc(100vh - 160px); } .map-legend { top: 120px; left: 32px; right: 32px; } }
 
     /* PANZOOM for infinite zoom */
-    .panzoom-container { position: absolute; inset: 0; background: rgba(0,0,0,.98); cursor: grab; }
+    .panzoom-container { position: absolute; inset: 0; z-index: 3000; background: rgba(0,0,0,.98); cursor: grab; }
     .panzoom-container:active { cursor: grabbing; }
     .panzoom-img { position: absolute; transform-origin: center; will-change: transform; }
     .panzoom-close { position: fixed; top: 24px; right: 24px; width: 44px; height: 44px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); color: var(--white); border-radius: 4px; display: flex; align-items: center; justify-content: center; z-index: 3000; }
@@ -1091,34 +1091,34 @@ document.getElementById('lbImg').addEventListener('dblclick', function(e) {
 });
 
 let panZoomActive = false;
+let pzCleanup = null;
 function openPanZoom(src) {
   const container = document.createElement('div');
   container.className = 'panzoom-container';
   container.id = 'panZoomContainer';
-  
+
   const img = document.createElement('img');
   img.className = 'panzoom-img';
   img.src = src;
   img.style.transform = 'translate(-50%, -50%) scale(1)';
   img.style.left = '50%';
   img.style.top = '50%';
-  
+
   const closeBtn = document.createElement('button');
   closeBtn.className = 'panzoom-close';
   closeBtn.setAttribute('aria-label', '关闭');
   closeBtn.innerHTML = '✕';
   closeBtn.onclick = closePanZoom;
-  
+
   container.appendChild(img);
   container.appendChild(closeBtn);
   document.body.appendChild(container);
-  
-  // Simple drag and zoom
+
   let isDragging = false;
-  let startX, startY, startLeft, startTop, currentScale = 1;
+  let startX = 0, startY = 0, startLeft = 0, startTop = 0, currentScale = 1;
   let currentX = 0, currentY = 0;
-  
-  container.addEventListener('mousedown', function(e) {
+
+  function onDown(e) {
     if (e.target === container || e.target === img) {
       isDragging = true;
       startX = e.clientX;
@@ -1126,28 +1126,33 @@ function openPanZoom(src) {
       startLeft = currentX;
       startTop = currentY;
     }
-  });
-  
-  document.addEventListener('mousemove', function(e) {
+  }
+  function onMove(e) {
     if (!isDragging || !panZoomActive) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    currentX = startLeft + dx;
-    currentY = startTop + dy;
+    currentX = startLeft + (e.clientX - startX);
+    currentY = startTop + (e.clientY - startY);
     updatePanZoomTransform(img, currentX, currentY, currentScale);
-  });
-  
-  document.addEventListener('mouseup', function() {
-    isDragging = false;
-  });
-  
-  container.addEventListener('wheel', function(e) {
+  }
+  function onUp() { isDragging = false; }
+  function onWheel(e) {
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
     currentScale = Math.max(1, Math.min(currentScale + delta, 5));
     updatePanZoomTransform(img, currentX, currentY, currentScale);
-  });
-  
+  }
+
+  container.addEventListener('mousedown', onDown);
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+  container.addEventListener('wheel', onWheel, { passive: false });
+
+  pzCleanup = function() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    container.removeEventListener('mousedown', onDown);
+    container.removeEventListener('wheel', onWheel);
+  };
+
   panZoomActive = true;
 }
 
@@ -1158,6 +1163,7 @@ function updatePanZoomTransform(img, x, y, scale) {
 function closePanZoom() {
   const container = document.getElementById('panZoomContainer');
   if (container) container.remove();
+  if (pzCleanup) { pzCleanup(); pzCleanup = null; }
   panZoomActive = false;
 }
 
