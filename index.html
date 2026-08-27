@@ -1882,7 +1882,12 @@ document.addEventListener('click', function(e) {
       });
 
       if (!res.ok) {
-        let msg = '网络好像不太顺畅，稍后再试试？';
+        const fallback = {
+          403: '这个网址还没获得客服授权，请从官网访问 🌿',
+          429: '你问得有点快，稍等一下再聊好吗？',
+          502: '模型服务暂时不可用，稍后再试试 🌿',
+        }[res.status] || '服务暂时不可用（' + res.status + '），稍后再试试？';
+        let msg = fallback;
         try {
           const j = await res.json();
           if (j && j.error) msg = j.error;
@@ -1948,7 +1953,12 @@ document.addEventListener('click', function(e) {
         bubble.textContent = answer;
         history.push({ role: 'assistant', content: answer });
       } else {
-        addMsg('err', '连接中断了，请检查网络后重试 🌿');
+        // fetch 抛错且一个字都没收到：多半是 CORS 被拒（浏览器不给读响应体）
+        // 或真的断网。分开提示，免得把授权问题说成网络问题。
+        const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+        addMsg('err', offline
+          ? '网络断开了，恢复后再试试 🌿'
+          : '连接不上客服服务，请从官网访问，或稍后重试 🌿');
         history.pop();
       }
     } finally {
