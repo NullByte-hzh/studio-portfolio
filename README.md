@@ -17,6 +17,7 @@
 - **摄影地图（Map）** — 基于 [Leaflet](https://leafletjs.com/) 懒加载；底图**优先使用高德地图瓦片，加载失败自动回退 OpenStreetMap**；依据作品经纬度打点，点击弹窗可跳转至对应作品。
 - **预约页（Booking）** — 三档套餐卡片 + 预约表单（提交至 Formspree）+ 联系方式 / 微信 / 邮箱。
 - **留言讨论** — 集成 [Giscus](https://giscus.app/) 评论（支持暗色模式自适应）。
+- **AI 智能客服「小影」** — 右下角浮动按钮唤出聊天面板，流式打字机输出，复用站点配色与暗色模式；接智谱 GLM-4-Flash，经 Cloudflare Worker 代理，**API Key 不出现在前端**。内置话题守卫，只答摄影业务。
 - **深色模式** — 一键切换，默认跟随系统并记忆偏好。
 - **PWA / 离线** — `manifest.json` 可安装到桌面/主屏；`service-worker.js` 对图片采用「缓存优先」、其余请求「网络优先 + 离线外壳回退」。
 - **内容管理（Decap CMS）** — 访问 `/admin/` 即可在浏览器中可视化编辑作品与首页文案，内容以 Markdown 落库到仓库。
@@ -34,6 +35,7 @@
 | 内容后台 | Decap CMS 3.x（GitHub 仓库作为后端） |
 | 评论 | Giscus（GitHub Discussions 驱动） |
 | 表单 | Formspree（无需自建后端） |
+| AI 客服 | 智谱 GLM-4-Flash + Cloudflare Workers 代理（SSE 流式） |
 | 部署 | GitHub Pages（支持子路径部署） |
 
 ---
@@ -115,7 +117,51 @@ npx serve .
 | 评论区 | `index.html` → `<script src="https://giscus.app/client.js" ...>`（需替换 `data-repo` / `data-repo-id` / `data-category-id` 为你自己的 Giscus 配置） |
 | PWA 名称 / 图标 | `manifest.json` + `icon-192.svg` |
 | 地图底图 | `index.html` → `tileProviders`（高德 / OSM 可增删、调整顺序） |
+| 客服接口地址 | `index.html` → `const CHAT_API = '...'`（换成你自己的 Worker 地址） |
+| 客服欢迎语 / 快捷问题 | `index.html` → `GREETING` 与 `.chat-chip` 按钮 |
+| 客服业务知识 / 话术 | Worker 端 `SYSTEM_PROMPT`（不在本仓库，见下方说明） |
 | CMS 字段 | `admin/config.yml` |
+
+---
+
+## 🤖 AI 智能客服「小影」
+
+右下角浮动按钮唤出，回答套餐价格、拍摄流程、改期规则等问题。
+
+### 架构
+
+```
+访客浏览器 → Cloudflare Worker（持有 API Key）→ 智谱 GLM-4-Flash
+```
+
+**API Key 只存在于 Worker 的加密环境变量里，绝不出现在前端代码。** 静态站没有后端，若把 Key 写进 `index.html`，按 F12 就能扒走并刷爆你的额度 —— 所以必须有这层代理。
+
+前端只有三段代码在 `index.html`，搜注释即可定位：
+
+| 部分 | 注释标记 |
+| --- | --- |
+| 样式 | `/* ===== AI 客服「小影」 ===== */` |
+| 结构 | `<!-- ===== AI 客服「小影」 ===== -->` |
+| 逻辑 | 同名注释的 IIFE |
+
+### Worker 端不在本仓库
+
+服务端代码（含业务话术、限流、话题守卫）独立维护，本仓库只有前端。**Fork 后客服无法直接使用**，需要自建：
+
+1. 建一个 Cloudflare Worker，代理你选的模型 API（免费的可用智谱 GLM-4-Flash、通义 qwen-turbo）
+2. Key 用 `wrangler secret put` 存进环境变量，**不要写进代码**
+3. Worker 里配 CORS 白名单，只放行你自己的域名
+4. 把 `index.html` 的 `CHAT_API` 改成你的 Worker 地址
+
+### 两个值得注意的实现细节
+
+**代码层话题守卫。** 小模型压不住 System Prompt 的"只答业务"约束 —— 实测 GLM-4-Flash 会照样写完整代码、做翻译、讲量子力学，把你的客服当免费 ChatGPT 用。可靠做法是在 Worker 里用正则硬拦越界请求，命中直接返回拒绝话术、不调模型（顺带省 token）。同时要配业务白名单优先放行，否则会误杀正常提问 —— **误杀客户比漏拦更糟**。
+
+**403 会伪装成"网络中断"。** 当访问地址不在 Worker 的 CORS 白名单里时（换域名、内网部署、用 IP 访问），浏览器不允许前端读跨域失败的响应体，代码走的是外层 `catch` 而非 `!res.ok` 分支，用户看到的是"连接不上"，排查方向容易被带偏。前端错误处理两头都要管：按状态码给不同文案（403 授权 / 429 太快 / 502 模型异常），外层 `catch` 再用 `navigator.onLine` 区分真断网和跨域被拒。
+
+### 层级约定
+
+聊天组件 `z-index: 1900`，**刻意低于**灯箱（2000）和图片缩放容器（3000），并在灯箱打开时自动淡出（`body.lb-open`）。改动这块时留意别让按钮浮到幻灯片控件上面。
 
 ---
 
@@ -131,6 +177,8 @@ npx serve .
 - `index.html`（地图）：内置与 CMS 作品分配稳定 id（`g*` / `cms*`），地图弹窗改为按 id 查找，修复 CMS 数据异步加载后灯箱索引错位的问题。
 - `index.html`（UI）：滚动后导航栏改为毛玻璃透明态（半透明底 + `backdrop-filter` 模糊/提饱和，暗色模式同步适配）。
 - `index.html`（UI）：Hero 按钮悬停样式优化——次按钮悬停为半透明白，主按钮悬停反转为透明 + 白边，保持主次区分。
+- `index.html`（新功能）：接入 AI 智能客服「小影」——浮动按钮 + 流式聊天面板，复用站点 CSS 变量自动跟随暗色模式；`z-index: 1900` 垫在灯箱之下并在灯箱打开时淡出，修复了客服按钮遮挡幻灯片控件的问题；免责声明文字对比度提升至 5.73:1 满足 WCAG AA。
+- `index.html`（客服排障）：请求失败提示按状态码区分（403 未授权 / 429 频率超限 / 502 模型异常），外层 `catch` 用 `navigator.onLine` 区分真断网与跨域被拒 —— 此前一律显示"连接中断"，会把 CORS 白名单问题误导成网络故障。
 
 ---
 
