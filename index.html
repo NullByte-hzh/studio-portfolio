@@ -112,9 +112,7 @@
     .hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,10,.15) 0%, rgba(10,10,10,.35) 50%, rgba(10,10,10,.55) 100%); }
     .hero-content { position: relative; z-index: 10; text-align: center; color: var(--white); padding: 0 24px; max-width: 800px; }
     .hero-tag { font-size: 10px; letter-spacing: .4em; text-transform: uppercase; opacity: .7; margin-bottom: 24px; animation: fadeUp 1s .2s var(--ease) both; }
-    .hero-title { position: relative; font-family: Georgia, serif; font-size: clamp(32px, 8vw, 72px); font-weight: 400; line-height: 1.1; margin-bottom: 24px; letter-spacing: -.02em; animation: fadeUp 1s .4s var(--ease) both; }
-    .hero-title.fluid-on { color: transparent; text-shadow: none; }
-    .hero-title.fluid-fallback { color: var(--white); }
+    .hero-title { font-family: Georgia, serif; font-size: clamp(32px, 8vw, 72px); font-weight: 400; line-height: 1.1; margin-bottom: 24px; letter-spacing: -.02em; animation: fadeUp 1s .4s var(--ease) both; }
     .hero-subtitle { font-size: 14px; letter-spacing: .15em; opacity: .85; max-width: 500px; margin: 0 auto 40px; line-height: 1.8; animation: fadeUp 1s .6s var(--ease) both; }
     .hero-cta { display: inline-flex; gap: 16px; animation: fadeUp 1s .8s var(--ease) both; }
     .hero-btn { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; padding: 14px 32px; border: 1px solid rgba(255,255,255,.4); background: transparent; color: var(--white); transition: all .4s var(--ease); }
@@ -512,7 +510,7 @@ html.dark #giscus-container {
     
     <div class="hero-content">
       <p class="hero-tag">独立摄影师 · 深圳</p>
-      <h1 class="hero-title" id="fluidHeroTitle">捕捉生活的温度</h1>
+      <h1 class="hero-title">捕捉生活的温度</h1>
       <p class="hero-subtitle">专注于人像、风光与街头摄影，用镜头讲述每一个值得被记住的故事</p>
       <div class="hero-cta">
         <button class="hero-btn primary" onclick="showPage('gallery')">浏览作品</button>
@@ -2006,6 +2004,5 @@ document.addEventListener('click', function(e) {
   });
 })();
 </script>
-<script src="fluid-text.js?v=1" defer></script>
 </body>
 </html>
