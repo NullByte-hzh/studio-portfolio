@@ -32,6 +32,7 @@
   var quadBuf = null;
   var uniCache = {}, attrCache = {};
   var lastTime = 0;
+  var maskScale = 1;
   var hue = Math.random() * PALETTE.length;
   var fallbackDone = false;
 
@@ -216,6 +217,7 @@
     texH = Math.max(2, Math.floor(rect.height * dpr * scale));
     canvas.width = texW;
     canvas.height = texH;
+    maskScale = texW / rect.width; // 蒙版画布与 CSS 像素的换算比
 
     destroyFBO(velA); destroyFBO(velB); destroyFBO(dyeA); destroyFBO(dyeB); destroyFBO(maskFBO);
     velA = createFBO(texW, texH);
@@ -250,7 +252,7 @@
     if (!text) text = 'STUDIO';
 
     var cs = window.getComputedStyle(root());
-    var fontSize = parseFloat(cs.fontSize) || 64;
+    var fontSize = (parseFloat(cs.fontSize) || 64) * (maskScale || 1); // 按蒙版画布比例缩放字号
     ctx.font = (cs.fontWeight || '400') + ' ' + fontSize + 'px ' + (cs.fontFamily || 'Georgia, serif');
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -398,9 +400,10 @@
     rafId = 0;
   }
 
-  function fallback() {
+  function fallback(reason) {
     if (fallbackDone) return;
     fallbackDone = true;
+    window.__FLUID_ERR = reason || 'unknown';
     stop();
     if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
     root().classList.add('fluid-fallback');
@@ -454,17 +457,16 @@
   }
 
   function init() {
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return fallback();
-    }
+    /* 注：本效果无自主动画，仅在指针交互时局部响应（类似 hover 高亮），
+       不属于 prefers-reduced-motion 想屏蔽的环境动效，故不做硬拦截。 */
     try {
-      if (!initGL()) return fallback();
+      if (!initGL()) return fallback('no-webgl-context');
       rebuildGL();
       bindEvents();
       start();
       root().classList.add('fluid-on');
     } catch (e) {
-      fallback();
+      fallback('exception: ' + (e && e.message));
     }
   }
 
