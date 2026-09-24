@@ -1,0 +1,13 @@
+name = "studio-chat"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# 可选：启用 KV 做跨节点限流与每日用量统计
+# 1) npx wrangler kv namespace create CHAT_KV
+# 2) 把返回的 id 填到下面，并取消注释
+# [[kv_namespaces]]
+# binding = "CHAT_KV"
+# id = "填入你的 KV namespace id"
+
+[observability]
+enabled = true

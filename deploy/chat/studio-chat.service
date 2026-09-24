@@ -1,0 +1,16 @@
+[Unit]
+Description=STUDIO chat proxy (xiaoying)
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/studio-chat/chat-proxy.py
+Environment=PORT=8790
+Environment=LLM_KEY_FILE=/etc/studio-chat/llm.key
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

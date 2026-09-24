@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  studio-portfolio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: studio-portfolio
+    ports:
+      - "8082:80"
+    restart: unless-stopped
