@@ -19,6 +19,29 @@
   
   <!-- PWA -->
   <meta name="theme-color" content="#1a1a1a" id="theme-color-meta" />
+  <!-- 主题预应用：在首次绘制前决定明暗，避免深色模式用户看到一帧白底（FOUC） -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('studio-theme');
+        // 迁移旧键 studio-dark（"true"/"false"）→ studio-theme（"dark"/"light"）
+        if (saved === null) {
+          var legacy = localStorage.getItem('studio-dark');
+          if (legacy === 'true')  { saved = 'dark';  localStorage.setItem('studio-theme', 'dark');  }
+          if (legacy === 'false') { saved = 'light'; localStorage.setItem('studio-theme', 'light'); }
+          if (legacy !== null) localStorage.removeItem('studio-dark');
+        }
+        // 只有用户从未显式选择过时才跟随系统；显式选择优先，不再被系统偏好覆盖
+        var dark = saved ? saved === "dark"
+                         : !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) {
+          document.documentElement.classList.add("dark");
+          var m = document.getElementById("theme-color-meta");
+          if (m) m.setAttribute("content", "#0f0f0f");
+        }
+      } catch (e) { /* 隐私模式下 localStorage 不可用：静默跟随系统 */ }
+    })();
+  </script>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="STUDIO" />
@@ -112,15 +135,17 @@
     .hero-slide.active { opacity: 1; transform: scale(1); }
     .hero-slide img { width: 100%; height: 100%; object-fit: cover; }
     .hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,10,.15) 0%, rgba(10,10,10,.35) 50%, rgba(10,10,10,.55) 100%); }
-    .hero-content { position: relative; z-index: 10; text-align: center; color: var(--white); padding: 0 24px; max-width: 800px; }
+    /* 注意：这里必须用字面白色而不是 var(--white)。暗色主题把 --white 反转成 #1a1a1a，
+       若沿用变量，hero 标题/副标题会在照片上变成深色、几乎不可见（既有 bug）。 */
+    .hero-content { position: relative; z-index: 10; text-align: center; color: #fff; padding: 0 24px; max-width: 800px; }
     .hero-tag { font-size: 10px; letter-spacing: .4em; text-transform: uppercase; opacity: .7; margin-bottom: 24px; animation: fadeUp 1s .2s var(--ease) both; }
     .hero-title { font-family: Georgia, serif; font-size: clamp(32px, 8vw, 72px); font-weight: 400; line-height: 1.1; margin-bottom: 24px; letter-spacing: -.02em; animation: fadeUp 1s .4s var(--ease) both; }
     .hero-subtitle { font-size: 14px; letter-spacing: .15em; opacity: .85; max-width: 500px; margin: 0 auto 40px; line-height: 1.8; animation: fadeUp 1s .6s var(--ease) both; }
     .hero-cta { display: inline-flex; gap: 16px; animation: fadeUp 1s .8s var(--ease) both; }
-    .hero-btn { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; padding: 14px 32px; border: 1px solid rgba(255,255,255,.4); background: transparent; color: var(--white); transition: all .4s var(--ease); }
-    .hero-btn:hover { background: rgba(255,255,255,.15); color: var(--white); border-color: rgba(255,255,255,.8); }
+    .hero-btn { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; padding: 14px 32px; border: 1px solid rgba(255,255,255,.4); background: transparent; color: #fff; transition: all .4s var(--ease); }
+    .hero-btn:hover { background: rgba(255,255,255,.15); color: #fff; border-color: rgba(255,255,255,.8); }
     .hero-btn.primary { background: var(--white); color: var(--dark); border-color: var(--white); }
-    .hero-btn.primary:hover { background: transparent; color: var(--white); }
+    .hero-btn.primary:hover { background: transparent; color: #fff; }
     .hero-scroll { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--white); opacity: .6; animation: fadeUp 1s 1s var(--ease) both; }
     .hero-scroll span { font-size: 9px; letter-spacing: .25em; text-transform: uppercase; }
     .hero-scroll-icon { width: 1px; height: 40px; background: linear-gradient(to bottom, rgba(255,255,255,1), transparent); animation: scrollLine 2s infinite; }
@@ -129,7 +154,8 @@
     .hero-dots { position: absolute; bottom: 48px; left: 48px; z-index: 10; display: flex; gap: 12px; }
     .hero-dot { width: 24px; height: 2px; background: rgba(255,255,255,.3); border: none; transition: all .4s var(--ease); }
     .hero-dot.active { background: var(--white); width: 40px; }
-    .hero-nav { position: absolute; bottom: 40px; right: 48px; z-index: 10; display: flex; gap: 8px; }
+    /* right 从 48px 让到 104px：聊天悬浮按钮（right:32px + 56px 宽）原先正好压住「下一张」 */
+    .hero-nav { position: absolute; bottom: 40px; right: 104px; z-index: 10; display: flex; gap: 8px; }
     .hero-nav-btn { width: 40px; height: 40px; border: 1px solid rgba(255,255,255,.3); background: transparent; color: var(--white); display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all .3s; }
     .hero-nav-btn:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.5); }
     @media (max-width: 768px) { .hero-nav, .hero-dots { display: none; } .hero-content { padding: 0 20px; } }
@@ -322,6 +348,124 @@ html.dark #giscus-container {
 }
 
 
+    /* ===== 背景特效 FX =====
+       纯装饰层：全部 pointer-events:none、position:fixed，不参与布局、不影响可访问性树。
+       可通过 ?fx=off、页脚「特效」按钮，或系统「减弱动态效果」整体关闭。
+       不使用 mix-blend-mode（会与滚动内容强制合成，移动端开销大），
+       也不使用 filter:blur（改用 radial-gradient 达到同样的柔化效果，成本低得多）。 */
+    :root {
+      --fx-grain-opacity: .13;      /* 胶片颗粒强度（亮色）。颗粒应被感觉到而非被看到 */
+      --fx-glow-opacity:  .26;      /* 氛围光强度（亮色）   */
+      --fx-glow: rgba(154,154,144,.55);   /* 氛围光颜色，JS 会按 hero 图主色覆写 */
+      --fx-parallax: .12;           /* hero 视差系数，JS 读取 */
+    }
+    html.dark { --fx-grain-opacity: .18; --fx-glow-opacity: .22; }
+    .fx-layer { position: fixed; pointer-events: none; }
+
+    /* --- 1) 胶片颗粒 ----------------------------------------------
+       SVG feTurbulence 只栅格化一次；动画只改 transform（纯合成层，不触发重绘）。
+       噪点走 alpha 通道而非混合模式，因此亮色底下压暗、暗色底下提亮，
+       与真实银盐颗粒一致。元素放大到 130% 并留 15% 余量，位移时始终铺满。 */
+    .fx-grain {
+      top: -15%; left: -15%; width: 130%; height: 130%;
+      z-index: 900; opacity: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='fxg'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0.33 0.33 0.33 0 -0.15'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23fxg)'/%3E%3C/svg%3E");
+      transition: opacity 1.2s var(--ease);
+    }
+    .fx-on .fx-grain { opacity: var(--fx-grain-opacity); animation: fxGrain 1s steps(1, end) infinite; }
+    @keyframes fxGrain {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      12%      { transform: translate3d(-4%, -3%, 0); }
+      25%      { transform: translate3d(3%, -5%, 0); }
+      37%      { transform: translate3d(-5%, 2%, 0); }
+      50%      { transform: translate3d(4%, 4%, 0); }
+      62%      { transform: translate3d(-3%, 5%, 0); }
+      75%      { transform: translate3d(5%, -2%, 0); }
+      87%      { transform: translate3d(-2%, -4%, 0); }
+    }
+
+    /* --- 2) 氛围光 -------------------------------------------------
+       两团缓慢漂移的柔光，颜色由 JS 从当前 hero 照片里提取（见 fx.js）。
+       用 radial-gradient 代替 blur 滤镜：视觉接近，但不占 GPU 显存、不阻塞合成。 */
+    .fx-ambient { inset: 0; z-index: -1; overflow: hidden; opacity: 0; transition: opacity 1.6s var(--ease); }
+    .fx-on .fx-ambient { opacity: 1; }
+    .fx-blob {
+      position: absolute; width: 58vmax; height: 58vmax; border-radius: 50%;
+      background: radial-gradient(circle at center, var(--fx-glow) 0%, transparent 68%);
+      opacity: var(--fx-glow-opacity);
+      transition: background 1.8s var(--ease);
+      will-change: transform;
+    }
+    .fx-blob.b1 { top: -16vmax; left: -12vmax; animation: fxBlobA 28s ease-in-out infinite alternate; }
+    .fx-blob.b2 { bottom: -20vmax; right: -14vmax; animation: fxBlobB 36s ease-in-out infinite alternate; }
+    @keyframes fxBlobA { from { transform: translate3d(0, 0, 0) scale(1); }    to { transform: translate3d(8vmax, 6vmax, 0) scale(1.14); } }
+    @keyframes fxBlobB { from { transform: translate3d(0, 0, 0) scale(1.06); } to { transform: translate3d(-7vmax, -6vmax, 0) scale(.94); } }
+
+    /* --- 3) hero 滚动视差 ------------------------------------------
+       开启 FX 时把 hero-bg 上下各留出 18% 余量，位移时不会露出空白边。
+       图片本身是 object-fit:cover，容器变高只是裁切位置略变，观感无损。 */
+    .fx-on .hero-bg { top: -18%; height: 136%; will-change: transform; }
+
+    /* --- 4) 顶部滚动进度条 ------------------------------------------ */
+    .fx-progress {
+      top: 0; left: 0; height: 2px; width: 0; z-index: 1200;
+      background: linear-gradient(90deg, var(--accent-warm), var(--accent));
+      opacity: 0; transition: opacity .4s var(--ease);
+    }
+    .fx-on .fx-progress { opacity: .7; }
+
+    /* --- 5) 页面切换「快门扫光」 ------------------------------------
+       一道极淡的暖色光带自上而下扫过，替代原来生硬的 display 切换。
+       不用全屏闪光，避免光敏不适。 */
+    .fx-shutter { top: 0; left: 0; width: 100%; height: 100%; z-index: 1100; opacity: 0; overflow: hidden; }
+    .fx-shutter::after {
+      content: ''; position: absolute; left: 0; top: -36vh; width: 100%; height: 36vh;
+      background: linear-gradient(to bottom, transparent 0%, var(--accent-warm) 52%, transparent 100%);
+      opacity: .18;
+    }
+    .fx-shutter.run { opacity: 1; animation: fxSweep .62s var(--ease) both; }
+    @keyframes fxSweep { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, 140vh, 0); } }
+
+    /* --- 页脚的特效开关 --------------------------------------------- */
+    .fx-toggle {
+      background: none; border: none; padding: 0; font: inherit; color: inherit;
+      letter-spacing: .08em; cursor: pointer; opacity: .75; transition: opacity .25s;
+      border-bottom: 1px solid transparent;
+    }
+    .fx-toggle:hover { opacity: 1; border-bottom-color: currentColor; }
+
+    /* --- 6) 换片漏光 ---------------------------------------------
+       hero 换片时一道暖色斜光扫过一次，模拟胶片漏光。
+       不用 mix-blend-mode：半透明暖白渐变在照片上本身就是提亮效果，零合成开销。 */
+    .fx-leak { position: absolute; inset: 0; z-index: 5; opacity: 0; pointer-events: none; overflow: hidden; }
+    .fx-leak::after {
+      content: ''; position: absolute; top: -30%; left: -60%; width: 70%; height: 160%;
+      background: linear-gradient(100deg, transparent 0%, rgba(255,214,165,.30) 44%, rgba(255,246,228,.46) 52%, rgba(255,214,165,.30) 60%, transparent 100%);
+      transform: translate3d(-30%, 0, 0) rotate(8deg);
+      filter: blur(6px);
+    }
+    .fx-leak.run { animation: fxLeakFade .95s var(--ease) both; }
+    .fx-leak.run::after { animation: fxLeakMove .95s var(--ease) both; }
+    @keyframes fxLeakFade { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
+    @keyframes fxLeakMove { from { transform: translate3d(-30%, 0, 0) rotate(8deg); } to { transform: translate3d(230%, 0, 0) rotate(8deg); } }
+
+    /* --- 7) 作品卡片 hover 光泽 ------------------------------------
+       一道斜光掠过卡片，像灯光扫过相纸。仅精确指针设备（桌面），触屏不触发。 */
+    @media (hover: hover) and (pointer: fine) {
+      .fx-on .masonry-item::after {
+        content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+        background: linear-gradient(115deg, transparent 32%, rgba(255,255,255,.20) 48%, rgba(255,255,255,.05) 56%, transparent 72%);
+        transform: translate3d(-120%, 0, 0);
+        transition: transform .7s var(--ease);
+      }
+      .fx-on .masonry-item:hover::after { transform: translate3d(120%, 0, 0); }
+    }
+    /* 系统要求「减弱动态效果」时，即使 JS 失效也不会有动画 */
+    @media (prefers-reduced-motion: reduce) {
+      .fx-grain, .fx-blob, .fx-shutter.run, .fx-leak.run, .fx-leak.run::after { animation: none !important; }
+      .fx-leak { display: none; }
+      .fx-on .hero-bg { top: 0; height: 100%; }
+    }
     /* REVEAL */
     .reveal { opacity: 0; transform: translateY(40px); transition: all .8s var(--ease); }
     .reveal.visible { opacity: 1; transform: translateY(0); }
@@ -824,7 +968,7 @@ html.dark #giscus-container {
     </div>
   </div>
   <div class="footer-bottom">
-    <span>© 2026 STUDIO. All rights reserved.</span>
+    <span>© 2026 STUDIO. All rights reserved. · <button type="button" class="fx-toggle" id="fxToggle" aria-pressed="true">特效：开</button></span>
     <span>Made with 🖤 in Shenzhen</span>
   </div>
 </footer>
@@ -856,22 +1000,22 @@ html.dark #giscus-container {
 <script>
 /* ===== DATA ===== */
 const galleryData = [
-  { cat: 'landscape', title: '暮色海岸', meta: '风光 · 深圳', lat: 22.5431, lng: 114.0579, src: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80&fm=webp' },
-  { cat: 'portrait', title: '午后光影', meta: '人像 · 室内', src: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&q=80&fm=webp' },
-  { cat: 'street', title: '城市黄昏', meta: '街拍 · 香港', lat: 22.3193, lng: 114.1694, src: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80&fm=webp' },
-  { cat: 'nature', title: '林间晨雾', meta: '自然 · 户外', src: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80&fm=webp' },
-  { cat: 'portrait', title: '静水深流', meta: '人像 · 黑白', src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&q=80&fm=webp' },
-  { cat: 'landscape', title: '天际线', meta: '风光 · 城市', lat: 22.5431, lng: 114.0579, src: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80&fm=webp' },
-  { cat: 'street', title: '夜归', meta: '街拍 · 深圳', lat: 22.5431, lng: 114.0579, src: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=800&q=80&fm=webp' },
-  { cat: 'nature', title: '花开有时', meta: '自然 · 植物', src: 'https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=800&q=80&fm=webp' },
-  { cat: 'landscape', title: '城市轮廓', meta: '风光 · 航拍', lat: 22.5431, lng: 114.0579, src: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&q=80&fm=webp' },
-  { cat: 'portrait', title: '目光', meta: '人像 · 近摄', src: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=800&q=80&fm=webp' },
-  { cat: 'nature', title: '银河', meta: '自然 · 星空', src: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80&fm=webp' },
-  { cat: 'street', title: '老巷深处', meta: '街拍 · 怀旧', src: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=800&q=80&fm=webp' },
-  { cat: 'landscape', title: '山川', meta: '风光 · 户外', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80&fm=webp' },
-  { cat: 'portrait', title: '微笑', meta: '人像 · 日常', src: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80&fm=webp' },
-  { cat: 'nature', title: '海边礁石', meta: '自然 · 海景', lat: 22.5200, lng: 114.0300, src: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&q=80&fm=webp' },
-  { cat: 'street', title: '雨中', meta: '街拍 · 情绪', src: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=800&q=80&fm=webp' }
+  { cat: 'landscape', title: '暮色海岸', meta: '风光 · 深圳', lat: 22.5431, lng: 114.0579, src: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80&fm=webp', w: 480, h: 323 },
+  { cat: 'portrait', title: '午后光影', meta: '人像 · 室内', src: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&q=80&fm=webp', w: 480, h: 600 },
+  { cat: 'street', title: '城市黄昏', meta: '街拍 · 香港', lat: 22.3193, lng: 114.1694, src: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80&fm=webp', w: 480, h: 293 },
+  { cat: 'nature', title: '林间晨雾', meta: '自然 · 户外', src: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80&fm=webp', w: 480, h: 323 },
+  { cat: 'portrait', title: '静水深流', meta: '人像 · 黑白', src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&q=80&fm=webp', w: 480, h: 720 },
+  { cat: 'landscape', title: '天际线', meta: '风光 · 城市', lat: 22.5431, lng: 114.0579, src: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80&fm=webp', w: 480, h: 323 },
+  { cat: 'street', title: '夜归', meta: '街拍 · 深圳', lat: 22.5431, lng: 114.0579, src: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=800&q=80&fm=webp', w: 480, h: 323 },
+  { cat: 'nature', title: '花开有时', meta: '自然 · 植物', src: 'https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=800&q=80&fm=webp', w: 480, h: 300 },
+  { cat: 'landscape', title: '城市轮廓', meta: '风光 · 航拍', lat: 22.5431, lng: 114.0579, src: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&q=80&fm=webp', w: 480, h: 323 },
+  { cat: 'portrait', title: '目光', meta: '人像 · 近摄', src: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=800&q=80&fm=webp', w: 480, h: 698 },
+  { cat: 'nature', title: '银河', meta: '自然 · 星空', src: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80&fm=webp', w: 480, h: 308 },
+  { cat: 'street', title: '老巷深处', meta: '街拍 · 怀旧', src: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=800&q=80&fm=webp', w: 480, h: 323 },
+  { cat: 'landscape', title: '山川', meta: '风光 · 户外', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80&fm=webp', w: 480, h: 323 },
+  { cat: 'portrait', title: '微笑', meta: '人像 · 日常', src: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80&fm=webp', w: 480, h: 720 },
+  { cat: 'nature', title: '海边礁石', meta: '自然 · 海景', lat: 22.5200, lng: 114.0300, src: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&q=80&fm=webp', w: 480, h: 855 },
+  { cat: 'street', title: '雨中', meta: '街拍 · 情绪', src: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=800&q=80&fm=webp', w: 480, h: 720 }
 ];
 // 为内置画廊条目分配稳定 id，供地图弹窗按 id 定位（避免数组下标漂移）
 galleryData.forEach((item, i) => { item.id = 'g' + i; });
@@ -1033,7 +1177,7 @@ function renderGallery() {
 
     el.innerHTML = `
       ${removeBtn}
-      <img src="${escapeHtml(normalizeSrc(item.src))}" alt="${title}" loading="lazy" decoding="async" />
+      <img ${galleryImgAttrs(item)} alt="${title}" loading="lazy" decoding="async" />
       <div class="masonry-overlay">
         <h3 class="masonry-title">${title}</h3>
         <p class="masonry-meta">${meta}</p>
@@ -1065,6 +1209,46 @@ function hiRes(src) {
     return src.replace('w=800', 'w=1600');
   }
   return src;
+}
+
+/* ===== 响应式图片 =====
+   瀑布流卡片在手机上实际只有 ~160px 宽，原先却一律下载 w=800（均值 125KB，19 张约 2.3MB）。
+   改为按视口下发多尺寸 srcset，并补 width/height 让浏览器提前算出宽高比、消除布局偏移（CLS）。
+   非 Unsplash 图源（用户上传的 data URL、将来自托管的图）走原样输出分支，不会坏。 */
+const GALLERY_SRCSET_WIDTHS = [320, 480, 640, 960];
+const GALLERY_SIZES = '(max-width:768px) 50vw, (max-width:1100px) 33vw, 25vw';
+const LIGHTBOX_SRCSET_WIDTHS = [1200, 1600, 2400];
+
+// 取出 Unsplash 图片的无参数基础地址；非 Unsplash 返回 null
+function unsplashBase(src) {
+  if (typeof src !== 'string') return null;
+  if (src.indexOf('images.unsplash.com/photo-') === -1) return null;
+  const q = src.indexOf('?');
+  return q === -1 ? src : src.slice(0, q);
+}
+
+// 生成 <img> 的属性串（已做 HTML 转义）
+function galleryImgAttrs(item) {
+  const src = normalizeSrc(item.src || item.dataUrl || '');
+  const dim = (item.w && item.h) ? ' width="' + item.w + '" height="' + item.h + '"' : '';
+  const base = unsplashBase(src);
+  if (!base) {
+    return 'src="' + escapeHtml(src) + '"' + dim;
+  }
+  const q = 'q=72&fm=webp';
+  const srcset = GALLERY_SRCSET_WIDTHS.map(function (w) {
+    return base + '?w=' + w + '&' + q + ' ' + w + 'w';
+  }).join(', ');
+  return 'src="' + escapeHtml(base + '?w=480&' + q) + '"'
+       + ' srcset="' + escapeHtml(srcset) + '"'
+       + ' sizes="' + GALLERY_SIZES + '"' + dim;
+}
+
+// 灯箱缩略图条只需要极小的图，原先却复用 w=800（5 张 ≈ 625KB）
+function thumbSrc(item) {
+  const src = normalizeSrc(item.src || item.dataUrl || '');
+  const base = unsplashBase(src);
+  return base ? base + '?w=160&q=60&fm=webp' : src;
 }
 
 /* ===== UPLOAD SYSTEM ===== */
@@ -1170,7 +1354,19 @@ function openLightbox(idx) {
   const items = getAllItems();
   const item = items[idx];
   if (!item) return;
-  document.getElementById('lbImg').src = hiRes(normalizeSrc(item.src || item.dataUrl));
+  const lbImg = document.getElementById('lbImg');
+  const lbSrc = hiRes(normalizeSrc(item.src || item.dataUrl));
+  lbImg.src = lbSrc;
+  const lbBase = unsplashBase(lbSrc);
+  if (lbBase) {
+    lbImg.srcset = LIGHTBOX_SRCSET_WIDTHS.map(function (w) {
+      return lbBase + '?w=' + w + '&q=80&fm=webp ' + w + 'w';
+    }).join(', ');
+    lbImg.sizes = '100vw';
+  } else {
+    lbImg.removeAttribute('srcset');
+    lbImg.removeAttribute('sizes');
+  }
   document.getElementById('lbImg').alt = item.title;
   document.getElementById('lbTitle').textContent = item.title;
   document.getElementById('lbMeta').textContent = item.meta;
@@ -1500,7 +1696,7 @@ function renderThumbs(items) {
     const thumb = document.createElement('div');
     thumb.className = 'lb-thumb';
     const idx = items.indexOf(item);
-    thumb.innerHTML = `<img src="${escapeHtml(normalizeSrc(item.src || item.dataUrl))}" alt="" />`;
+    thumb.innerHTML = `<img src="${escapeHtml(thumbSrc(item))}" alt="" loading="lazy" decoding="async" />`;
     thumb.onclick = () => openLightbox(idx);
     container.appendChild(thumb);
   });
@@ -1610,20 +1806,34 @@ function refreshReveal() {
 /* ===== DARK MODE ===== */
 function initDarkMode() {
   const toggle = document.getElementById('darkToggle');
-  const isDark = localStorage.getItem('studio-dark') === 'true' || 
-                 (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  
-  if (isDark) {
-    document.documentElement.classList.add('dark');
-    document.getElementById('theme-color-meta').setAttribute('content', '#0f0f0f');
+  const meta = document.getElementById('theme-color-meta');
+  const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+  function apply(dark) {
+    document.documentElement.classList.toggle('dark', dark);
+    if (meta) meta.setAttribute('content', dark ? '#0f0f0f' : '#1a1a1a');
   }
-  
+  function isDark() {
+    return document.documentElement.classList.contains('dark');
+  }
+  function savedTheme() {
+    try { return localStorage.getItem('studio-theme'); } catch (e) { return null; }
+  }
+
+  // <head> 里的内联脚本已经在首次绘制前应用过主题，这里只负责交互与后续跟随
   toggle.addEventListener('click', () => {
-    document.documentElement.classList.toggle('dark');
-    const isDarkNow = document.documentElement.classList.contains('dark');
-    localStorage.setItem('studio-dark', isDarkNow);
-    document.getElementById('theme-color-meta').setAttribute('content', isDarkNow ? '#0f0f0f' : '#1a1a1a');
+    const next = !isDark();
+    apply(next);
+    try { localStorage.setItem('studio-theme', next ? 'dark' : 'light'); } catch (e) {}
   });
+
+  // 用户从未显式选择时，才跟随系统明暗变化；显式选择不被覆盖
+  if (mq && mq.addEventListener) {
+    mq.addEventListener('change', (e) => {
+      if (savedTheme()) return;
+      apply(e.matches);
+    });
+  }
 }
 
 /* ===== SERVICE WORKER ===== */
@@ -2006,6 +2216,246 @@ document.addEventListener('click', function(e) {
       fab.classList.remove('open');
     }
   });
+})();
+</script>
+<script>
+/* ===== 背景特效 FX =====
+   自成一体的 IIFE，不修改任何既有函数：
+   - hero 换片、页面切换都用 MutationObserver 监听 class 变化，零侵入
+   - 主色提取失败（跨域污染 / 超时 / 无 canvas）时回落到硬编码色，绝不报错
+   - 系统「减弱动态效果」、省流量模式、低端设备下自动关闭 */
+(function () {
+  'use strict';
+
+  var STORAGE_KEY = 'studio-fx';
+
+  var mqReduce = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {};
+  var lowEnd = (navigator.hardwareConcurrency || 4) <= 2;
+  var saveData = conn.saveData === true || conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g';
+  /* 无障碍优先：系统要求减弱动态效果时强制关闭，且不允许被打开 */
+  var forcedOff = !!(mqReduce && mqReduce.matches);
+
+  /* hero 四张图的兜底氛围色（主色提取失败时使用） */
+  var FALLBACK_GLOW = [
+    'rgba(96, 128, 150, .55)',   // 暮色海岸 —— 冷蓝
+    'rgba(104, 126, 100, .55)',  // 晨雾林间 —— 灰绿
+    'rgba(146, 124, 98, .55)',   // 山野       —— 暖褐
+    'rgba(150, 130, 92, .55)'    // 丘陵       —— 金褐
+  ];
+
+  function readPref() {
+    if (forcedOff) return false;
+    try {
+      var q = new URLSearchParams(location.search).get('fx');
+      if (q === 'off' || q === '0' || q === 'false') return false;
+      if (q === 'on' || q === '1' || q === 'true') return true;
+      var saved = localStorage.getItem(STORAGE_KEY);
+      if (saved !== null) return saved === 'on';
+    } catch (e) { /* 隐私模式 */ }
+    return !saveData && !lowEnd;
+  }
+
+  /* ---------- 建装饰层 ---------- */
+  function el(cls, parent) {
+    var d = document.createElement('div');
+    d.className = 'fx-layer ' + cls;
+    d.setAttribute('aria-hidden', 'true');
+    (parent || document.body).appendChild(d);
+    return d;
+  }
+
+  var grain = el('fx-grain');
+  var progress = el('fx-progress');
+  var shutter = el('fx-shutter');
+  var ambient = el('fx-ambient');
+  var leak = document.createElement('div');
+  leak.className = 'fx-leak';
+  leak.setAttribute('aria-hidden', 'true');
+  var heroEl = document.querySelector('.hero');
+  if (heroEl) heroEl.appendChild(leak);
+  leak.addEventListener('animationend', function () { leak.classList.remove('run'); });
+  var blob1 = document.createElement('div'); blob1.className = 'fx-blob b1';
+  var blob2 = document.createElement('div'); blob2.className = 'fx-blob b2';
+  ambient.appendChild(blob1); ambient.appendChild(blob2);
+
+  var heroBg = document.querySelector('.hero-bg');
+  var parallaxK = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fx-parallax')) || 0.16;
+
+  /* ---------- 氛围光：从当前 hero 照片提取主色 ---------- */
+  var lastSrc = '';
+  function extractGlow(src, cb) {
+    var im = new Image();
+    im.crossOrigin = 'anonymous';          /* Unsplash 返回 access-control-allow-origin: * */
+    im.decoding = 'async';
+    var done = false;
+    var timer = setTimeout(function () { if (!done) { done = true; cb(null); } }, 5000);
+    im.onload = function () {
+      if (done) return; done = true; clearTimeout(timer);
+      try {
+        var c = document.createElement('canvas');
+        c.width = 24; c.height = 24;
+        var ctx = c.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(im, 0, 0, 24, 24);
+        var d = ctx.getImageData(0, 0, 24, 24).data;
+        var sr = 0, sg = 0, sb = 0, wsum = 0;
+        for (var i = 0; i < d.length; i += 4) {
+          if (d[i + 3] < 128) continue;
+          var r = d[i], g = d[i + 1], b = d[i + 2];
+          var mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+          var sat = mx === 0 ? 0 : (mx - mn) / mx;
+          var lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          /* 偏重中等亮度、饱和度高的像素；跳过接近纯黑纯白的区域 */
+          var wt = (0.22 + sat) * (1 - Math.abs(lum - 0.5) * 1.5);
+          if (wt <= 0) continue;
+          sr += r * wt; sg += g * wt; sb += b * wt; wsum += wt;
+        }
+        if (!wsum) { cb(null); return; }
+        cb('rgba(' + Math.round(sr / wsum) + ', ' + Math.round(sg / wsum) + ', ' + Math.round(sb / wsum) + ', .55)');
+      } catch (e) { cb(null); }            /* canvas 被跨域污染 → 用兜底色 */
+    };
+    im.onerror = function () { if (!done) { done = true; clearTimeout(timer); cb(null); } };
+    /* 只要一张 32px 的缩略图，约 1KB；不碰页面上可见的 <img>，避免影响其缓存与加载 */
+    im.src = src.replace(/([?&])w=\d+/, '$1w=32');
+  }
+
+  function syncAmbient() {
+    var active = document.querySelector('.hero-slide.active');
+    if (!active) return;
+    var img = active.querySelector('img');
+    if (!img || !img.src || img.src === lastSrc) return;
+    lastSrc = img.src;
+    var idx = Array.prototype.indexOf.call(document.querySelectorAll('.hero-slide'), active);
+    var fallback = FALLBACK_GLOW[idx] || FALLBACK_GLOW[0];
+    document.documentElement.style.setProperty('--fx-glow', fallback);   /* 先上兜底色，避免闪一下灰 */
+    if (!/^https?:\/\/images\.unsplash\.com\//.test(img.src)) return;     /* 非 Unsplash 不做跨域取色 */
+    extractGlow(img.src, function (color) {
+      document.documentElement.style.setProperty('--fx-glow', color || fallback);
+    });
+  }
+
+  /* ---------- 换片漏光：只在真正换片时触发，首屏不闪 ---------- */
+  function currentSlideIdx() {
+    var active = document.querySelector('.hero-slide.active');
+    return active ? Array.prototype.indexOf.call(document.querySelectorAll('.hero-slide'), active) : -1;
+  }
+  var lastSlideIdx = -1;
+  function maybeLeak() {
+    if (!leak || !document.documentElement.classList.contains('fx-on')) return;
+    var active = document.querySelector('.hero-slide.active');
+    if (!active) return;
+    var idx = currentSlideIdx();
+    if (idx === lastSlideIdx) return;
+    lastSlideIdx = idx;
+    leak.classList.remove('run');
+    void leak.offsetWidth;   /* 强制重排，保证连续换片时动画能重启 */
+    leak.classList.add('run');
+  }
+
+  /* ---------- 滚动：视差 + 进度条（rAF 合帧） ---------- */
+  var ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function () {
+      var y = window.scrollY || window.pageYOffset || 0;
+      if (heroBg) heroBg.style.transform = 'translate3d(0,' + (y * parallaxK).toFixed(1) + 'px,0)';
+      var doc = document.documentElement;
+      var max = (doc.scrollHeight - doc.clientHeight) || 1;
+      progress.style.width = Math.min(100, (y / max) * 100).toFixed(2) + '%';
+      ticking = false;
+    });
+  }
+
+  /* ---------- 页面切换：快门扫光 ---------- */
+  var sweeping = false;
+  function sweep() {
+    if (sweeping) return;
+    sweeping = true;
+    shutter.classList.add('run');
+    var stop = function () {
+      shutter.classList.remove('run');
+      sweeping = false;
+      shutter.removeEventListener('animationend', stop);
+    };
+    shutter.addEventListener('animationend', stop);
+    setTimeout(function () { if (sweeping) stop(); }, 1200);   /* 兜底，防止动画被打断后卡住 */
+  }
+
+  /* ---------- 观察器（零侵入接入既有逻辑） ---------- */
+  var heroObs = null, pageObs = null;
+  function startObservers() {
+    if (!heroObs && heroBg) {
+      heroObs = new MutationObserver(function () { syncAmbient(); maybeLeak(); });
+      heroObs.observe(heroBg, { subtree: true, attributes: true, attributeFilter: ['class'] });
+      /* 记录当前片序：这样第一次真正的换片也会触发漏光，而页面加载时不会闪 */
+      lastSlideIdx = currentSlideIdx();
+    }
+    if (!pageObs) {
+      pageObs = new MutationObserver(function (muts) {
+        for (var i = 0; i < muts.length; i++) {
+          if (muts[i].target.classList && muts[i].target.classList.contains('active')) { sweep(); break; }
+        }
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('.page'), function (p) {
+        pageObs.observe(p, { attributes: true, attributeFilter: ['class'] });
+      });
+    }
+  }
+  function stopObservers() {
+    if (heroObs) { heroObs.disconnect(); heroObs = null; }
+    if (pageObs) { pageObs.disconnect(); pageObs = null; }
+  }
+
+  /* ---------- 开关 ---------- */
+  var enabled = false;
+  function setEnabled(on, persist) {
+    on = !!on && !forcedOff;
+    enabled = on;
+    document.documentElement.classList.toggle('fx-on', on);
+    if (on) {
+      window.addEventListener('scroll', onScroll, { passive: true });
+      startObservers();
+      onScroll();
+      syncAmbient();
+      /* 标签页隐藏时暂停颗粒动画，省电 */
+      document.addEventListener('visibilitychange', onVis);
+    } else {
+      window.removeEventListener('scroll', onScroll);
+      document.removeEventListener('visibilitychange', onVis);
+      stopObservers();
+      if (heroBg) heroBg.style.transform = '';
+      progress.style.width = '0%';
+    }
+    if (persist) { try { localStorage.setItem(STORAGE_KEY, on ? 'on' : 'off'); } catch (e) {} }
+    var btn = document.getElementById('fxToggle');
+    if (btn) {
+      btn.textContent = forcedOff ? '特效：系统已减弱动态' : (on ? '特效：开' : '特效：关');
+      btn.disabled = forcedOff;
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+  }
+  function onVis() {
+    grain.style.animationPlayState = document.hidden ? 'paused' : 'running';
+    blob1.style.animationPlayState = document.hidden ? 'paused' : 'running';
+    blob2.style.animationPlayState = document.hidden ? 'paused' : 'running';
+  }
+
+  /* ---------- 页脚开关按钮 ---------- */
+  var btn = document.getElementById('fxToggle');
+  if (btn) {
+    btn.addEventListener('click', function () { setEnabled(!enabled, true); });
+  }
+
+  /* 系统在运行中切换「减弱动态效果」时立即响应 */
+  if (mqReduce && mqReduce.addEventListener) {
+    mqReduce.addEventListener('change', function (e) {
+      forcedOff = e.matches;
+      setEnabled(e.matches ? false : readPref(), false);
+    });
+  }
+
+  setEnabled(readPref(), false);
 })();
 </script>
 </body>
