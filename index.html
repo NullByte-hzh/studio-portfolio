@@ -221,12 +221,12 @@
     .masonry-item { break-inside: avoid; margin-bottom: var(--gap-lg); position: relative; cursor: pointer; overflow: hidden; }
     .masonry-item img { width: 100%; display: block; transition: transform .8s var(--ease), filter .5s; filter: brightness(.98) saturate(.95); }
     .masonry-item:hover img { transform: scale(1.03); filter: brightness(1) saturate(1); }
-    .masonry-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.5) 0%, transparent 40%); opacity: 0; transition: opacity .4s var(--ease); display: flex; flex-direction: column; justify-content: flex-end; padding: 24px; }
+    .masonry-overlay { position: absolute; inset: 0; z-index: 2; background: linear-gradient(to top, rgba(0,0,0,.5) 0%, transparent 40%); opacity: 0; transition: opacity .4s var(--ease); display: flex; flex-direction: column; justify-content: flex-end; padding: 24px; }
     .masonry-item:hover .masonry-overlay { opacity: 1; }
     .masonry-title { color: var(--white); font-size: 15px; font-weight: 500; margin-bottom: 4px; }
     .masonry-meta { color: rgba(255,255,255,.7); font-size: 11px; letter-spacing: .1em; }
     .masonry-item.is-uploaded::before { content: '已上传'; position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,.5); color: rgba(255,255,255,.85); font-size: 9px; letter-spacing: .1em; padding: 4px 10px; z-index: 5; }
-    .masonry-item .remove-btn { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: rgba(200,60,60,.8); border: none; color: #fff; font-size: 14px; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; z-index: 5; }
+    .masonry-item .remove-btn { position: absolute; z-index: 3; top: 12px; right: 12px; width: 28px; height: 28px; background: rgba(200,60,60,.8); border: none; color: #fff; font-size: 14px; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; z-index: 5; }
     .masonry-item:hover .remove-btn { opacity: 1; }
     .gallery-empty { text-align: center; padding: 80px 24px; display: none; }
     .gallery-empty.visible { display: block; }
@@ -358,8 +358,16 @@ html.dark #giscus-container {
       --fx-glow-opacity:  .26;      /* 氛围光强度（亮色）   */
       --fx-glow: rgba(154,154,144,.55);   /* 氛围光颜色，JS 会按 hero 图主色覆写 */
       --fx-parallax: .12;           /* hero 视差系数，JS 读取 */
+      --fx-leak-alpha: .34;         /* 换片漏光峰值不透明度 */
+      --fx-sheen-alpha: .14;        /* 卡片 hover 光泽峰值 */
+      --fx-sweep-alpha: .22;        /* 切页扫光不透明度 */
     }
     html.dark { --fx-grain-opacity: .18; --fx-glow-opacity: .22; }
+    /* 触屏：屏幕小、观看距离近，颗粒减半以免看起来像压缩噪点 */
+    @media (hover: none) {
+      :root { --fx-grain-opacity: .09; }
+      html.dark { --fx-grain-opacity: .12; }
+    }
     .fx-layer { position: fixed; pointer-events: none; }
 
     /* --- 1) 胶片颗粒 ----------------------------------------------
@@ -419,9 +427,9 @@ html.dark #giscus-container {
        不用全屏闪光，避免光敏不适。 */
     .fx-shutter { top: 0; left: 0; width: 100%; height: 100%; z-index: 1100; opacity: 0; overflow: hidden; }
     .fx-shutter::after {
-      content: ''; position: absolute; left: 0; top: -36vh; width: 100%; height: 36vh;
+      content: ''; position: absolute; left: 0; top: -26vh; width: 100%; height: 26vh;
       background: linear-gradient(to bottom, transparent 0%, var(--accent-warm) 52%, transparent 100%);
-      opacity: .18;
+      opacity: var(--fx-sweep-alpha);
     }
     .fx-shutter.run { opacity: 1; animation: fxSweep .62s var(--ease) both; }
     @keyframes fxSweep { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, 140vh, 0); } }
@@ -440,12 +448,15 @@ html.dark #giscus-container {
     .fx-leak { position: absolute; inset: 0; z-index: 5; opacity: 0; pointer-events: none; overflow: hidden; }
     .fx-leak::after {
       content: ''; position: absolute; top: -30%; left: -60%; width: 70%; height: 160%;
-      background: linear-gradient(100deg, transparent 0%, rgba(255,214,165,.30) 44%, rgba(255,246,228,.46) 52%, rgba(255,214,165,.30) 60%, transparent 100%);
+      background: linear-gradient(100deg, transparent 0%,
+        rgba(255,214,165, calc(var(--fx-leak-alpha) * .65)) 44%,
+        rgba(255,246,228, var(--fx-leak-alpha)) 52%,
+        rgba(255,214,165, calc(var(--fx-leak-alpha) * .65)) 60%, transparent 100%);
       transform: translate3d(-30%, 0, 0) rotate(8deg);
-      filter: blur(6px);
+      filter: blur(10px);
     }
-    .fx-leak.run { animation: fxLeakFade .95s var(--ease) both; }
-    .fx-leak.run::after { animation: fxLeakMove .95s var(--ease) both; }
+    .fx-leak.run { animation: fxLeakFade 1.15s var(--ease) both; }
+    .fx-leak.run::after { animation: fxLeakMove 1.15s var(--ease) both; }
     @keyframes fxLeakFade { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
     @keyframes fxLeakMove { from { transform: translate3d(-30%, 0, 0) rotate(8deg); } to { transform: translate3d(230%, 0, 0) rotate(8deg); } }
 
@@ -453,13 +464,32 @@ html.dark #giscus-container {
        一道斜光掠过卡片，像灯光扫过相纸。仅精确指针设备（桌面），触屏不触发。 */
     @media (hover: hover) and (pointer: fine) {
       .fx-on .masonry-item::after {
-        content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
-        background: linear-gradient(115deg, transparent 32%, rgba(255,255,255,.20) 48%, rgba(255,255,255,.05) 56%, transparent 72%);
+        content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+        background: linear-gradient(115deg, transparent 32%,
+          rgba(255,255,255, var(--fx-sheen-alpha)) 48%,
+          rgba(255,255,255, calc(var(--fx-sheen-alpha) * .25)) 56%, transparent 72%);
         transform: translate3d(-120%, 0, 0);
         transition: transform .7s var(--ease);
       }
       .fx-on .masonry-item:hover::after { transform: translate3d(120%, 0, 0); }
     }
+    /* --- 8) 实时调参面板：仅 ?fx=tune 时出现，用于现场拧手感 --- */
+    .fx-tune { position: fixed; left: 16px; bottom: 16px; z-index: 3000; width: 268px;
+      background: rgba(18,18,18,.88); color: #eee; border: 1px solid rgba(255,255,255,.14);
+      border-radius: 10px; padding: 14px 14px 10px; font-size: 11px; line-height: 1.5;
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .fx-tune h5 { margin: 0 0 8px; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #c4a882; }
+    .fx-tune label { display: grid; grid-template-columns: 52px 1fr 38px; gap: 8px; align-items: center; margin-bottom: 6px; }
+    .fx-tune input[type=range] { width: 100%; accent-color: #c4a882; margin: 0; }
+    .fx-tune output { text-align: right; color: #bbb; }
+    .fx-tune .fx-tune-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .fx-tune button { flex: 1; background: rgba(255,255,255,.08); color: #eee;
+      border: 1px solid rgba(255,255,255,.18); border-radius: 6px; padding: 6px 8px; font: inherit; cursor: pointer; }
+    .fx-tune button:hover { background: rgba(255,255,255,.16); }
+    .fx-tune pre { margin: 8px 0 2px; max-height: 96px; overflow: auto; white-space: pre-wrap;
+      word-break: break-all; color: #9fd39f; font-size: 10px; }
     /* 系统要求「减弱动态效果」时，即使 JS 失效也不会有动画 */
     @media (prefers-reduced-motion: reduce) {
       .fx-grain, .fx-blob, .fx-shutter.run, .fx-leak.run, .fx-leak.run::after { animation: none !important; }
@@ -2279,8 +2309,10 @@ document.addEventListener('click', function(e) {
   var blob2 = document.createElement('div'); blob2.className = 'fx-blob b2';
   ambient.appendChild(blob1); ambient.appendChild(blob2);
 
+  var tuneHooks = { parallax: null };
   var heroBg = document.querySelector('.hero-bg');
   var parallaxK = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fx-parallax')) || 0.16;
+  tuneHooks.parallax = function (v) { parallaxK = v; };
 
   /* ---------- 氛围光：从当前 hero 照片提取主色 ---------- */
   var lastSrc = '';
@@ -2360,6 +2392,8 @@ document.addEventListener('click', function(e) {
     requestAnimationFrame(function () {
       var y = window.scrollY || window.pageYOffset || 0;
       if (heroBg) heroBg.style.transform = 'translate3d(0,' + (y * parallaxK).toFixed(1) + 'px,0)';
+      /* 氛围光反向微移，制造一点纵深 */
+      ambient.style.transform = 'translate3d(0,' + (-y * 0.04).toFixed(1) + 'px,0)';
       var doc = document.documentElement;
       var max = (doc.scrollHeight - doc.clientHeight) || 1;
       progress.style.width = Math.min(100, (y / max) * 100).toFixed(2) + '%';
@@ -2425,6 +2459,7 @@ document.addEventListener('click', function(e) {
       document.removeEventListener('visibilitychange', onVis);
       stopObservers();
       if (heroBg) heroBg.style.transform = '';
+      ambient.style.transform = '';
       progress.style.width = '0%';
     }
     if (persist) { try { localStorage.setItem(STORAGE_KEY, on ? 'on' : 'off'); } catch (e) {} }
@@ -2455,6 +2490,62 @@ document.addEventListener('click', function(e) {
     });
   }
 
+  /* ---------- 实时调参面板：?fx=tune 时出现 ----------
+     六个滑杆直接写 CSS 变量，改完点「复制参数」把 :root 片段发给我即可固化。 */
+  var TUNE_SPECS = [
+    ['grain',    '--fx-grain-opacity', 0, 0.4,  '颗粒'],
+    ['glow',     '--fx-glow-opacity',  0, 0.6,  '氛围光'],
+    ['parallax', '--fx-parallax',      0, 0.4,  '视差'],
+    ['leak',     '--fx-leak-alpha',    0, 0.8,  '漏光'],
+    ['sheen',    '--fx-sheen-alpha',   0, 0.4,  '光泽'],
+    ['sweep',    '--fx-sweep-alpha',   0, 0.5,  '扫光']
+  ];
+  function buildTunePanel() {
+    if (!/(\?|&)fx=tune/.test(location.search)) return;
+    var box = document.createElement('div');
+    box.className = 'fx-tune';
+    box.setAttribute('aria-label', '特效调参面板');
+    var html = '<h5>FX 调参</h5>';
+    TUNE_SPECS.forEach(function (s) {
+      var cur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(s[1])) || 0;
+      html += '<label><span>' + s[4] + '</span>'
+            + '<input type="range" min="' + s[2] + '" max="' + s[3] + '" step="0.01" value="' + cur + '" data-var="' + s[1] + '" data-key="' + s[0] + '">'
+            + '<output>' + cur.toFixed(2) + '</output></label>';
+    });
+    html += '<div class="fx-tune-actions"><button type="button" data-act="copy">复制参数</button>'
+          + '<button type="button" data-act="reset">重置</button></div><pre hidden></pre>';
+    box.innerHTML = html;
+    document.body.appendChild(box);
+    box.addEventListener('input', function (e) {
+      var t = e.target;
+      if (!t.matches || !t.matches('input[type=range]')) return;
+      var v = parseFloat(t.value);
+      document.documentElement.style.setProperty(t.dataset.var, String(v));
+      t.nextElementSibling.textContent = v.toFixed(2);
+      if (t.dataset.key === 'parallax' && tuneHooks.parallax) tuneHooks.parallax(v);
+    });
+    box.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('button') : null;
+      if (!b) return;
+      var pre = box.querySelector('pre');
+      if (b.dataset.act === 'reset') {
+        TUNE_SPECS.forEach(function (s) { document.documentElement.style.removeProperty(s[1]); });
+        box.querySelectorAll('input[type=range]').forEach(function (inp) {
+          var d = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(inp.dataset.var)) || 0;
+          inp.value = d; inp.nextElementSibling.textContent = d.toFixed(2);
+          if (inp.dataset.key === 'parallax' && tuneHooks.parallax) tuneHooks.parallax(d);
+        });
+        pre.hidden = true;
+      } else {
+        var snippet = ':root {\n' + TUNE_SPECS.map(function (s) {
+          return '  ' + s[1] + ': ' + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue(s[1])) || 0).toFixed(2) + ';';
+        }).join('\n') + '\n}';
+        pre.textContent = snippet; pre.hidden = false;
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(snippet).catch(function () {});
+      }
+    });
+  }
+  buildTunePanel();
   setEnabled(readPref(), false);
 })();
 </script>
