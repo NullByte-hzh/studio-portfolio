@@ -1,0 +1,15 @@
+# 纵深防御：即使有人把 Dockerfile 改回 `COPY .`，这些也不会进镜像
+.git
+.gitignore
+.github
+.dockerignore
+Dockerfile
+docker-compose.yml
+README.md
+docs/
+deploy/
+*.patch
+*.log
+*.md
+node_modules/
+.DS_Store
