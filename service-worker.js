@@ -1,4 +1,4 @@
-const CACHE_NAME = 'studio-v6';
+const CACHE_NAME = 'studio-v7';
 // 资源清单；在 install 事件内基于 registration.scope 计算绝对地址，
 // 兼容根目录与 GitHub Pages 子路径部署（顶层访问 self.registration 会导致 worker 失效）
 const ASSET_PATHS = ['.', 'index.html', 'manifest.json', 'icon-192.svg'];
