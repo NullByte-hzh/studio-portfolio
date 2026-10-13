@@ -242,3 +242,96 @@ HTTPS / 客服 API / 安全头等宿主机反代配置见 `deploy/host-nginx.con
 ---
 
 <p align="center">Made with 📷 and vanilla JS.</p>
+
+
+---
+
+## 作品图上传（服务端永久保存）
+
+### 存储方式：本地目录
+
+图片落在服务器 `media/uploads/`，该目录以**只读**方式 bind mount 进 nginx 容器，
+落盘即可通过 `/media/uploads/...` 公开访问。选择本地目录而非对象存储的原因：
+零月成本、零外部依赖、服务器尚有 400GB+ 空闲、且已被 restic 每日备份覆盖。
+将来要换对象存储，只需替换 `studio-upload.py` 里 `unique_path()`/`os.replace()`
+这一处落盘逻辑，接口与前端都不用动。
+
+```
+media/uploads/2026/10/1791880900654-海岸暮色.jpg
+            └年┘└月┘ └─epoch 毫秒─┘└─净化后的原名─┘
+```
+
+**文件系统即索引**——不建 `index.json`。索引文件会与磁盘脱节（写成功但索引失败、
+或反之），而目录列举天然一致。文件名以 epoch 毫秒开头，所以**字典序 == 时间序**，
+排序无需额外元数据；展示名就是去掉前缀的后半段。
+
+### 数据结构
+
+`GET /upload-api/list` 返回的每一项：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `id` / `rel` | string | 相对存储根的路径，如 `2026/10/1791880900654-海岸暮色.jpg`；删除时用它 |
+| `name` | string | 展示名（已去掉时间戳前缀），如 `海岸暮色.jpg` |
+| `url` | string | 公开访问路径 `/media/uploads/<rel>` |
+| `size` | int | 字节数 |
+| `mime` | string | **由魔数判定**的真实类型，非客户端声明值 |
+| `width` / `height` | int\|null | 服务端解析图片头得到，前端用来预留比例、消除 CLS |
+| `ts` | int | epoch 毫秒，排序用 |
+| `uploadedAt` | string | 本地时区 ISO8601 |
+
+### 接口
+
+| 方法 | 路径 | 鉴权 | 说明 |
+|---|---|---|---|
+| POST | `/upload-api/upload?name=<原名>` | Bearer | 请求体是**图片裸字节**（非 multipart）；`Content-Type` 填图片类型 |
+| GET | `/upload-api/list?sort=time\|name&order=desc\|asc&limit=N` | 公开 | 有序列表，默认时间倒序 |
+| DELETE | `/upload-api/item?id=<rel>` | Bearer | 删除单个文件 |
+| GET | `/upload-api/health` | 公开 | 健康检查，返回上限与允许格式 |
+
+成功 `201 {ok:true,item:{...}}`；失败一律 `{ok:false,error:{code,message,detail?}}`，
+`message` 是可直接展示给用户的中文。
+
+| HTTP | code | 触发条件 |
+|---|---|---|
+| 400 | `EMPTY` / `BAD_REQUEST` | 空文件、请求体读取失败 |
+| 401 | `UNAUTHORIZED` | 令牌缺失或错误 |
+| 404 | `NOT_FOUND` | 路径不存在、删除 id 越界 |
+| 413 | `TOO_LARGE` | 超过 `MAX_BYTES`（默认 15MB） |
+| 415 | `UNSUPPORTED` | 魔数不是 jpg/png/gif/webp（含 SVG） |
+| 429 | `TOO_MANY_REQUESTS` | 单 IP 超过 30 次/分 |
+| 500 | `INTERNAL` | 未预期异常 |
+| 507 | `INSUFFICIENT_STORAGE` | 磁盘剩余不足 1GB |
+
+**为什么用裸 body 而不是 multipart**：Python 3.13+ 已移除 `cgi` 模块，手写 multipart
+解析纯属自找麻烦；而每文件一个请求天然带来逐文件进度与逐文件错误提示——
+一批里某张失败不会影响其余。
+
+### 安全边界（全部按不可信输入处理）
+
+- **类型只认魔数**，不信扩展名与客户端 `Content-Type`：实测 `lie.png` 内装 JPEG → 存为 `lie.jpg`
+- **显式排除 SVG**（XSS 载体），仅 jpg / png / gif / webp
+- 大小**双重校验**：先看 `Content-Length` 提前 413，再在流式读取时硬截断（不信任头部）
+- 文件名净化：实测 `../../a\0b.jpg` → `ab.jpg`；300 字符 → 截到 80；`.jpg` → `upload.jpg`
+- 落盘路径**完全由服务端拼装**；删除走 `realpath` 前缀校验，`../../etc/passwd` → 404
+- 不做二次 `unquote`（`parse_qs` 已解码，双重解码是经典过滤绕过）
+- 令牌用 `hmac.compare_digest` 常量时间比较；**写操作强制鉴权，读列表公开**
+- 先写 `.part` 临时文件 + `fsync`，再 `os.replace` 原子改名，绝不暴露半成品
+- nginx：`^~ /media/uploads/` 命中后不再评估正则 location，故**嵌套**一条 dotfile 拒绝，
+  否则上传中的 `.part-*` 会被公网读到；`/media/originals/` 整体 404（原图含 EXIF/GPS）
+- systemd 加固：`User=jzy`、`ProtectSystem=strict`、`ReadWritePaths` 只给 uploads、
+  `CapabilityBoundingSet=` 空、`SystemCallFilter=@system-service`、`NoNewPrivileges`
+
+### 部署位置
+
+| 组件 | 位置 |
+|---|---|
+| 服务代码 | `/opt/studio-upload/studio-upload.py`（源：`deploy/upload/studio-upload.py`） |
+| systemd | `/etc/systemd/system/studio-upload.service`（源：`deploy/upload/`） |
+| 令牌 | `/etc/studio-upload/token`（`root:jzy` 640；`cat` 它即可取用） |
+| 存储 | `~/studio-portfolio-docker/media/uploads/` |
+| 反代 | 宿主 nginx `/upload-api/` → `127.0.0.1:8791` |
+| 备份 | `~/bin/studio-backup.sh`（restic，每日 03:15，含 uploads） |
+
+令牌只在浏览器 `localStorage['studio-upload-token']` 里，首次上传时用 `prompt` 询问。
+轮换令牌：`openssl rand -hex 32 | sudo tee /etc/studio-upload/token && sudo systemctl restart studio-upload`
