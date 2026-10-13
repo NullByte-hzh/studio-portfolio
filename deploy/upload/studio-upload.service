@@ -1,0 +1,35 @@
+[Unit]
+Description=STUDIO portfolio image upload service (permanent server-side storage)
+After=network.target
+
+[Service]
+Type=simple
+User=jzy
+Group=jzy
+ExecStart=/usr/bin/python3 /opt/studio-upload/studio-upload.py
+Environment=PYTHONUNBUFFERED=1
+Environment=PORT=8791
+Environment=STORAGE_DIR=/home/jzy/studio-portfolio-docker/media/uploads
+Environment=PUBLIC_PREFIX=/media/uploads
+Environment=TOKEN_FILE=/etc/studio-upload/token
+Restart=always
+RestartSec=3
+
+# ---- 加固：这是一个接受公网写入的服务，权限收到最小 ----
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/home/jzy/studio-portfolio-docker/media/uploads
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+SystemCallFilter=@system-service
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+UMask=0022
+
+[Install]
+WantedBy=multi-user.target

@@ -210,6 +210,7 @@
     .gallery-actions { display: flex; align-items: center; gap: 16px; }
     .upload-btn { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; padding: 10px 20px; background: transparent; border: 1px solid var(--border); color: var(--muted); display: flex; align-items: center; gap: 8px; transition: all .3s var(--ease); }
     .upload-btn:hover { border-color: var(--dark); color: var(--dark); }
+    .upload-btn[disabled], .nav-upload[disabled] { opacity: .55; cursor: progress; }
     .upload-btn svg { width: 14px; height: 14px; }
     .upload-count { font-size: 10px; letter-spacing: .12em; color: var(--accent-warm); }
     #uploadInput { display: none; }
@@ -658,7 +659,7 @@ html.dark #giscus-container {
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
       </svg>
     </button>
-    <button class="nav-upload" onclick="document.getElementById('uploadInput').click()" title="仅在本机本次会话预览，不会上传或保存">本地预览</button>
+    <button class="nav-upload" id="navUploadBtn" onclick="document.getElementById('uploadInput').click()" title="上传到服务器永久保存（jpg / png / gif / webp，单张 ≤15MB）">上传作品</button>
     <button class="nav-contact" onclick="showPage('booking');return false;">联系我</button>
     <button class="nav-toggle" id="navToggle" aria-label="菜单" aria-expanded="false" onclick="const n=document.getElementById('navLinks');const o=n.classList.toggle('open');this.setAttribute('aria-expanded',o);">
       <span></span><span></span><span></span>
@@ -666,7 +667,7 @@ html.dark #giscus-container {
   </div>
 </nav>
 
-<input type="file" id="uploadInput" accept="image/*" multiple />
+<input type="file" id="uploadInput" accept="image/jpeg,image/png,image/gif,image/webp" multiple />
 
 <!-- PAGE: HOME -->
 <div id="page-home" class="page active">
@@ -806,15 +807,16 @@ html.dark #giscus-container {
       <button class="filter-btn" data-cat="landscape" onclick="filterGallery(this, 'landscape')">风光</button>
       <button class="filter-btn" data-cat="street" onclick="filterGallery(this, 'street')">街拍</button>
       <button class="filter-btn" data-cat="nature" onclick="filterGallery(this, 'nature')">自然</button>
-      <button class="filter-btn" id="uploadedFilterBtn" data-cat="uploaded" style="display:none" onclick="filterGallery(this, 'uploaded')">本地预览</button>
+      <button class="filter-btn" id="uploadedFilterBtn" data-cat="uploaded" style="display:none" onclick="filterGallery(this, 'uploaded')">我的上传</button>
     </div>
     <div class="gallery-actions">
-      <button class="upload-btn" onclick="document.getElementById('uploadInput').click()" title="仅在本机本次会话预览，不会上传或保存" aria-label="本地预览图片（不保存）">
+      <button class="upload-btn" id="uploadBtn" onclick="document.getElementById('uploadInput').click()" title="上传到服务器永久保存（jpg / png / gif / webp，单张 ≤15MB）" aria-label="上传作品图片">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M12 5v14M5 12h14"/>
         </svg>
-        本地预览
+        <span>上传作品</span>
       </button>
+      <button class="upload-btn" id="sortBtn" type="button" style="display:none" onclick="toggleUploadSort()" title="当前按上传时间倒序，点击改为按文件名">排序：时间 ↓</button>
       <span class="upload-count" id="uploadCount"></span>
     </div>
   </div>
@@ -1302,94 +1304,182 @@ function thumbSrc(item) {
   return r ? r(160) : src;
 }
 
-/* ===== 本地预览（不保存）=====
-   旧实现把图片转 base64 写进 localStorage，实测存在静默数据丢失：
-   - 该 origin 配额仅 4.94MB，base64 膨胀 1.333x → 1MB 原图只能存 3 张，5MB 起直接存不下
-   - saveUploads() 只保留最后 20 条，更早的无声丢弃
-   - push() 先于写盘执行，写盘失败只弹 toast，照片却照常渲染 →
-     用户看到「已上传」，刷新即消失
-   现改为 object URL 的纯内存预览：零配额、零膨胀、不再假装已保存。
-   真正入库需要服务端或对象存储直传，见 outputs/STUDIO-storage-audit.md 阶段 3+。
-   历史 localStorage 数据仍读出来展示（只读不写、不删除），不破坏既有内容。 */
-const MAX_SIZE = 15 * 1024 * 1024;
+/* ===== 服务端上传（永久保存）=====
+   图片 POST 到 upload-api/upload，落盘在服务器 media/uploads/YYYY/MM/，
+   由 nginx 只读挂载对外服务 → 刷新、关浏览器、换设备都还在。
+   列表来自 GET upload-api/list：文件系统即索引（不建 index.json，避免与磁盘脱节），
+   按上传时间或文件名有序。写操作需令牌（仅站长持有，存本机 localStorage），读列表公开。
+   用「裸 body」而非 multipart：每文件一个请求 → 逐文件成功/失败提示，互不牵连。 */
+const UPLOAD_API = 'upload-api';
+const UPLOAD_MAX = 15 * 1024 * 1024;
+const UPLOAD_ACCEPT = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const TOKEN_KEY = 'studio-upload-token';
 let uploadedPhotos = [];
+let uploadSort = 'time';        // 'time' 按上传时间倒序 | 'name' 按文件名升序
+let uploading = false;
 
-function loadUploads() {
+function getUploadToken(force) {
+  if (force) { try { localStorage.removeItem(TOKEN_KEY); } catch (e) {} }
+  let t = null;
+  try { t = localStorage.getItem(TOKEN_KEY); } catch (e) {}
+  if (!t) {
+    const input = window.prompt('请输入上传令牌（仅站长持有，只保存在本机浏览器）');
+    if (!input || !input.trim()) return null;
+    t = input.trim();
+    try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {}
+  }
+  return t;
+}
+
+function setUploadBusy(on) {
+  uploading = on;
+  const g = document.getElementById('uploadBtn');
+  const n = document.getElementById('navUploadBtn');
+  if (g) { g.disabled = on; const sp = g.querySelector('span'); if (sp) sp.textContent = on ? '上传中…' : '上传作品'; }
+  if (n) { n.disabled = on; n.textContent = on ? '上传中…' : '上传作品'; }
+}
+
+/* 提交前先在本地拦一遍：省掉注定失败的网络往返，错误信息也更具体 */
+function precheck(file) {
+  if (!file.type || file.type.indexOf('image/') !== 0) return '「' + file.name + '」不是图片文件';
+  if (UPLOAD_ACCEPT.indexOf(file.type) === -1) return '「' + file.name + '」格式不支持（仅 jpg / png / gif / webp）';
+  if (file.size === 0) return '「' + file.name + '」是空文件';
+  if (file.size > UPLOAD_MAX) return '「' + file.name + '」' + (file.size / 1048576).toFixed(1) + 'MB，超过 15MB 上限';
+  return null;
+}
+
+async function postUpload(file, token) {
+  const res = await fetch(UPLOAD_API + '/upload?name=' + encodeURIComponent(file.name), {
+    method: 'POST',
+    headers: { 'Content-Type': file.type, 'Authorization': 'Bearer ' + token },
+    body: file
+  });
+  let d = null;
+  try { d = await res.json(); } catch (e) {}
+  if (!res.ok || !d || !d.ok) {
+    const er = (d && d.error) || {};
+    const err = new Error(er.message || ('上传失败（HTTP ' + res.status + '）'));
+    err.status = res.status;
+    throw err;
+  }
+  return d.item;
+}
+
+async function handleUploadFiles(list) {
+  if (uploading) { showToast('正在上传中，请稍候…', true); return; }
+  if (!list || !list.length) return;
+  let token = getUploadToken(false);
+  if (!token) return;
+  setUploadBusy(true);
+  let ok = 0, reasked = false;
+  const fails = [];
+  for (const file of list) {
+    const bad = precheck(file);
+    if (bad) { fails.push(bad); continue; }
+    try {
+      await postUpload(file, token);
+      ok++;
+    } catch (e) {
+      if (e.status === 401 && !reasked) {          // 令牌失效：清掉重问一次，再重试当前这张
+        reasked = true;
+        token = getUploadToken(true);
+        if (token) {
+          try { await postUpload(file, token); ok++; continue; }
+          catch (e2) { fails.push('「' + file.name + '」' + e2.message); continue; }
+        }
+      }
+      fails.push('「' + file.name + '」' + e.message);
+    }
+  }
+  setUploadBusy(false);
+  await loadUploads();
+  if (ok) showToast('已上传 ' + ok + ' 张到服务器 · 永久保存');
+  if (fails.length) showToast(fails[0] + (fails.length > 1 ? '　等 ' + fails.length + ' 项失败' : ''), true);
+}
+
+async function loadUploads() {
   try {
-    const saved = localStorage.getItem('studio_uploads');
-    if (saved) uploadedPhotos = JSON.parse(saved) || [];
-  } catch(e) {}
+    const order = uploadSort === 'name' ? 'asc' : 'desc';
+    const res = await fetch(UPLOAD_API + '/list?sort=' + uploadSort + '&order=' + order + '&limit=500');
+    const d = await res.json();
+    if (d && d.ok && Array.isArray(d.items)) uploadedPhotos = d.items;
+  } catch (e) { /* 上传服务不可用时，画廊仍正常显示内置作品 */ }
   updateUploadCount();
+  renderGallery();
+}
+
+function toggleUploadSort() {
+  uploadSort = uploadSort === 'time' ? 'name' : 'time';
+  const b = document.getElementById('sortBtn');
+  if (b) {
+    b.textContent = uploadSort === 'time' ? '排序：时间 ↓' : '排序：文件名 ↑';
+    b.title = uploadSort === 'time' ? '当前按上传时间倒序，点击改为按文件名' : '当前按文件名升序，点击改为按上传时间';
+  }
+  loadUploads();
 }
 
 function updateUploadCount() {
   const n = uploadedPhotos.length;
   const el = document.getElementById('uploadCount');
-  el.textContent = n > 0 ? `本次预览 ${n} 张（不保存）` : '';
-
+  if (el) el.textContent = n > 0 ? ('服务器已保存 ' + n + ' 张') : '';
   const btn = document.getElementById('uploadedFilterBtn');
-  btn.style.display = n > 0 ? '' : 'none';
-  btn.textContent = n > 0 ? `本地预览 (${n})` : '';
+  if (btn) { btn.style.display = n > 0 ? '' : 'none'; btn.textContent = n > 0 ? ('我的上传 (' + n + ')') : ''; }
+  const srt = document.getElementById('sortBtn');
+  if (srt) srt.style.display = n > 1 ? '' : 'none';
 }
 
-function removeUpload(id) {
-  const gone = uploadedPhotos.find(p => p.id === id);
-  if (gone && gone.blobUrl) URL.revokeObjectURL(gone.blobUrl);   // 及时释放内存
-  uploadedPhotos = uploadedPhotos.filter(p => p.id !== id);
-  updateUploadCount();
-  renderGallery();
-  showToast('已从本次预览移除');
-}
-
-document.getElementById('uploadInput').addEventListener('change', function(e) {
-  const files = Array.from(e.target.files);
-  if (!files.length) return;
-  
-  const valid = files.filter(f => f.type.startsWith('image/') && f.size <= MAX_SIZE);
-  let done = 0;
-  files.forEach(file => {
-    if (!file.type.startsWith('image/')) return;
-    if (file.size > MAX_SIZE) {
-      showToast(`"${file.name}" 超过 ${MAX_SIZE / (1024 * 1024)}MB 限制`, true);
+async function removeUpload(id) {
+  const item = uploadedPhotos.find(function (p) { return p.id === id; });
+  const label = (item && item.name) || '这张图片';
+  if (!window.confirm('确定从服务器永久删除「' + label + '」？\n（每日备份中仍可找回近 7 天内的版本）')) return;
+  const token = getUploadToken(false);
+  if (!token) return;
+  try {
+    const res = await fetch(UPLOAD_API + '/item?id=' + encodeURIComponent(id),
+      { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+    const d = await res.json().catch(function () { return null; });
+    if (!res.ok || !d || !d.ok) {
+      const er = (d && d.error) || {};
+      if (res.status === 401) getUploadToken(true);
+      showToast(er.message || ('删除失败（HTTP ' + res.status + '）'), true);
       return;
     }
-    // object URL：不复制像素、不占配额；仅本次会话有效
-    const url = URL.createObjectURL(file);
-    uploadedPhotos.push({
-      id: Date.now() + Math.random().toString(36).slice(2, 8),
-      dataUrl: url,
-      blobUrl: url,
-      name: file.name.replace(/\.[^.]+$/, ''),
-      date: new Date().toLocaleDateString('zh-CN')
-    });
-    updateUploadCount();
-    renderGallery();
-    done++;
-    if (done === valid.length) {
-      showToast(`已加入本地预览 ${done} 张 · 不会保存，刷新页面即消失`);
-      if (uploadedPhotos.length === done) {
-        setTimeout(() => filterGallery(null, 'uploaded'), 100);
-      }
-    }
-  });
-  
+    showToast('已从服务器删除');
+    await loadUploads();
+  } catch (e) { showToast('删除失败：' + e.message, true); }
+}
+
+document.getElementById('uploadInput').addEventListener('change', function (e) {
+  const list = Array.from(e.target.files || []);   // 先复制：清空 input 会让 FileList 失效
   e.target.value = '';
+  handleUploadFiles(list);
 });
 
 /* ===== LIGHTBOX ===== */
 let lbIdx = 0;
 let lbReturnFocus = null;
 
+/* 服务端返回的上传项 → 画廊条目（带上真实宽高，渲染时才能预留比例、避免 CLS） */
+function uploadedAsItem(p) {
+  return {
+    cat: 'uploaded',
+    title: p.name || '我的照片',
+    meta: '上传于 ' + String(p.uploadedAt || p.date || '').slice(0, 10),
+    src: p.url || p.dataUrl,
+    uploaded: true,
+    id: p.id,
+    w: p.width, h: p.height
+  };
+}
+
 function getAllItems() {
   if (currentFilter === 'uploaded') {
-    return uploadedPhotos.map(p => ({
-      cat: 'uploaded', title: p.name || '我的照片', meta: '上传于 ' + p.date, src: p.dataUrl, uploaded: true, id: p.id
-    }));
+    return uploadedPhotos.map(uploadedAsItem);
   }
   let items = [...galleryData];
   if (currentFilter === 'all') {
     uploadedPhotos.forEach(p => {
-      items.push({ cat: 'uploaded', title: p.name || '我的照片', meta: '上传于 ' + p.date, src: p.dataUrl, uploaded: true, id: p.id });
+      items.push(uploadedAsItem(p));
     });
   }
   if (currentFilter !== 'all') {
