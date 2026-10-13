@@ -69,6 +69,8 @@ async function networkFirst(request, isNavigate) {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  // 本地预览用的 object URL：Cache API 不接受 blob: 键，直接放行给浏览器
+  if (event.request.url.startsWith('blob:')) return;
 
   if (event.request.destination === 'image') {
     event.respondWith(cacheFirst(event.request));

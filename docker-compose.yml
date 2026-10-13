@@ -9,3 +9,7 @@ services:
     ports:
       - "8082:80"
     restart: unless-stopped
+    volumes:
+      # 作品图不在镜像里：宿主机目录只读挂载，容器重建/镜像重build 都不影响原图
+      # ro 是关键——容器被攻破也改不了、删不了原图
+      - ./media:/usr/share/nginx/html/media:ro
