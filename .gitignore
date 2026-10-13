@@ -1,3 +1,7 @@
 # 作品图不进 Git：原图与派生图只存在于服务器 volume 与备份中
 # （Git 存文本：_gallery/*.md、代码、图标）
 media/
+
+# Python 字节码（本地语法检查会产生）
+__pycache__/
+*.pyc
